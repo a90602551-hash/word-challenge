@@ -1,0 +1,11 @@
+import { NextResponse } from "next/server";
+import { getStudentId } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+export async function GET(req: Request) {
+  const studentId = await getStudentId(req);
+  if (!studentId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const student = await prisma.student.findUnique({ where: { id: studentId }, select: { id: true, name: true, avatar: true } });
+  if (!student) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json(student);
+}
