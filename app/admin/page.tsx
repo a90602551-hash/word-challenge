@@ -3,18 +3,23 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
 
-interface Student { id: number; name: string; username: string; avatar: string; }
-interface WordSet  { id: number; name: string; emoji: string; description: string; _count: { words: number }; }
-interface Word     { id: number; english: string; korean: string; }
+interface Student  { id: number; name: string; username: string; avatar: string; }
+interface WordSet   { id: number; name: string; emoji: string; description: string; _count: { words: number }; }
+interface Word      { id: number; english: string; korean: string; }
+interface ScoreRow  { id: number; studentId: number; wordSetId: number | null; score: number; totalQuestions: number; createdAt: string; }
+interface ProgressRow { studentId: number; wordSetId: number; batchIdx: number; }
 
 const AVATARS = ["🐥", "🐶", "🐱", "🐰", "🐻", "🦊", "🐸", "🐧", "🦄", "🐯", "🐼", "🐨"];
-type Tab = "students" | "words";
+type Tab = "students" | "words" | "results";
 
 export default function AdminPage() {
   const router = useRouter();
   const [tab, setTab]               = useState<Tab>("students");
   const [students, setStudents]     = useState<Student[]>([]);
   const [wordSets, setWordSets]     = useState<WordSet[]>([]);
+  const [scores, setScores]         = useState<ScoreRow[]>([]);
+  const [progresses, setProgresses] = useState<ProgressRow[]>([]);
+  const [resultsWordSets, setResultsWordSets] = useState<WordSet[]>([]);
   const [selectedWs, setSelectedWs] = useState<WordSet | null>(null);
   const [wsWords, setWsWords]       = useState<Word[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -44,6 +49,7 @@ export default function AdminPage() {
     fetch("/api/teacher/me").then(r => { if (!r.ok) router.push("/admin/login"); }).catch(() => router.push("/admin/login"));
     loadStudents();
     loadWordSets();
+    loadResults();
   }, []);
 
   async function loadStudents() {
@@ -53,6 +59,15 @@ export default function AdminPage() {
   async function loadWordSets() {
     const r = await fetch("/api/wordsets");
     if (r.ok) setWordSets(await r.json());
+  }
+  async function loadResults() {
+    const r = await fetch("/api/teacher/scores");
+    if (r.ok) {
+      const data = await r.json();
+      setScores(data.scores);
+      setProgresses(data.progresses);
+      setResultsWordSets(data.wordSets);
+    }
   }
   async function loadWords(ws: WordSet) {
     const r = await fetch(`/api/wordsets/${ws.id}/words`);
@@ -189,10 +204,10 @@ export default function AdminPage() {
 
       {/* 탭 */}
       <div className="flex border-b bg-white px-6 gap-6">
-        {(["students", "words"] as Tab[]).map(t => (
-          <button key={t} onClick={() => setTab(t)}
+        {(["students", "words", "results"] as Tab[]).map(t => (
+          <button key={t} onClick={() => { setTab(t); if (t === "results") loadResults(); }}
             className={`py-3 font-bold text-sm transition-all border-b-2 ${tab === t ? "border-slate-700 text-slate-800" : "border-transparent text-gray-400"}`}>
-            {t === "students" ? "👥 학생 관리" : "📚 단어장 관리"}
+            {t === "students" ? "👥 학생 관리" : t === "words" ? "📚 단어장 관리" : "📊 학습 결과"}
           </button>
         ))}
       </div>
@@ -355,6 +370,90 @@ export default function AdminPage() {
                 <div className="bg-white rounded-2xl shadow-sm p-8 text-center text-gray-400">
                   <p className="text-4xl mb-3">👈</p>
                   <p className="font-bold">단어장을 선택하면<br />단어를 추가할 수 있어요</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {/* ── 학습 결과 ── */}
+        {tab === "results" && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-5 py-3 border-b flex items-center justify-between">
+                <h2 className="font-extrabold text-gray-800">📊 학생별 학습 결과</h2>
+                <button onClick={loadResults} className="text-xs text-slate-500 hover:text-slate-800">🔄 새로고침</button>
+              </div>
+              {students.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">학생이 없어요</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 border-b">
+                        <th className="px-4 py-3 text-left font-bold text-gray-600">학생</th>
+                        {resultsWordSets.map(ws => (
+                          <th key={ws.id} className="px-4 py-3 text-center font-bold text-gray-600 whitespace-nowrap">
+                            {ws.emoji} {ws.name}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {students.map(s => (
+                        <tr key={s.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl">{s.avatar}</span>
+                              <div>
+                                <p className="font-bold text-gray-800">{s.name}</p>
+                                <p className="text-xs text-gray-400">{s.username}</p>
+                              </div>
+                            </div>
+                          </td>
+                          {resultsWordSets.map(ws => {
+                            const wsScores = scores.filter(sc => sc.studentId === s.id && sc.wordSetId === ws.id);
+                            const progress = progresses.find(p => p.studentId === s.id && p.wordSetId === ws.id);
+                            const totalGroups = Math.ceil(ws._count.words / 5);
+
+                            if (wsScores.length === 0 && !progress) {
+                              return <td key={ws.id} className="px-4 py-3 text-center text-gray-300 text-xs">미시작</td>;
+                            }
+
+                            const best = wsScores.reduce((max, sc) => {
+                              const pct = sc.totalQuestions > 0 ? Math.round(sc.score / sc.totalQuestions * 100) : 0;
+                              return pct > max ? pct : max;
+                            }, 0);
+                            const latest = wsScores[0];
+                            const latestPct = latest && latest.totalQuestions > 0
+                              ? Math.round(latest.score / latest.totalQuestions * 100) : null;
+                            const completedGroups = progress?.batchIdx ?? (wsScores.length > 0 ? totalGroups : 0);
+                            const isComplete = !progress && wsScores.length > 0;
+
+                            return (
+                              <td key={ws.id} className="px-4 py-3 text-center">
+                                {isComplete ? (
+                                  <div>
+                                    <span className="inline-block bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full mb-1">완료 ✅</span>
+                                    {latestPct !== null && <p className="text-xs text-gray-500">최근 {latestPct}%</p>}
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <span className="inline-block bg-blue-100 text-blue-600 text-xs font-bold px-2 py-0.5 rounded-full mb-1">
+                                      {completedGroups}/{totalGroups} 그룹
+                                    </span>
+                                    {latestPct !== null && <p className="text-xs text-gray-500">최근 {latestPct}%</p>}
+                                  </div>
+                                )}
+                                {wsScores.length > 0 && (
+                                  <p className="text-xs text-gray-300">{wsScores.length}회 도전</p>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
