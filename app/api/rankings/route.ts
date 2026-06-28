@@ -3,56 +3,80 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    // 학습량 Top3: 도전 횟수 많은 순
-    const volumeRaw = await prisma.challengeScore.groupBy({
-      by: ["studentId"],
-      _count: { id: true },
-      orderBy: { _count: { id: "desc" } },
-      take: 3,
+    const wordSets = await prisma.wordSet.findMany({
+      orderBy: { order: "asc" },
+      select: { id: true, name: true, emoji: true },
     });
 
-    // 성적: 모든 점수 가져와서 학생별 최고 정확도 계산
     const allScores = await prisma.challengeScore.findMany({
       where: { totalQuestions: { gt: 0 } },
     });
 
-    // 학생별 최고 정확도 계산
-    const bestAccMap = new Map<number, number>();
-    for (const sc of allScores) {
-      const acc = sc.score / sc.totalQuestions;
-      const prev = bestAccMap.get(sc.studentId) ?? 0;
-      if (acc > prev) bestAccMap.set(sc.studentId, acc);
+    const results = wordSets.map(ws => {
+      const wsScores = allScores.filter(sc => sc.wordSetId === ws.id);
+
+      // 학습량: 학년별 도전 횟수
+      const sessionMap = new Map<number, number>();
+      for (const sc of wsScores) {
+        sessionMap.set(sc.studentId, (sessionMap.get(sc.studentId) ?? 0) + 1);
+      }
+      const volumeTop3Raw = [...sessionMap.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
+
+      // 성적: 학년별 평균 정확도
+      const accSumMap  = new Map<number, number>();
+      const accCntMap  = new Map<number, number>();
+      for (const sc of wsScores) {
+        const acc = sc.score / sc.totalQuestions;
+        accSumMap.set(sc.studentId, (accSumMap.get(sc.studentId) ?? 0) + acc);
+        accCntMap.set(sc.studentId, (accCntMap.get(sc.studentId) ?? 0) + 1);
+      }
+      const scoreTop3Raw = [...accSumMap.entries()]
+        .map(([id, sum]) => [id, sum / (accCntMap.get(id) ?? 1)] as [number, number])
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
+
+      return {
+        wordSetId: ws.id,
+        name: ws.name,
+        emoji: ws.emoji,
+        volumeTop3Raw,
+        scoreTop3Raw,
+      };
+    });
+
+    // 필요한 studentId 모두 수집
+    const allIds = new Set<number>();
+    for (const r of results) {
+      r.volumeTop3Raw.forEach(([id]) => allIds.add(id));
+      r.scoreTop3Raw.forEach(([id]) => allIds.add(id));
     }
 
-    // 정확도 Top3
-    const scoreTop3Raw = [...bestAccMap.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3);
-
-    const allStudentIds = [
-      ...new Set([...volumeRaw.map(r => r.studentId), ...scoreTop3Raw.map(([id]) => id)]),
-    ];
-
     const students = await prisma.student.findMany({
-      where: { id: { in: allStudentIds } },
+      where: { id: { in: [...allIds] } },
       select: { id: true, name: true, avatar: true },
     });
     const studentMap = new Map(students.map(s => [s.id, s]));
 
-    const volumeTop3 = volumeRaw.map((r, i) => ({
-      rank: i + 1,
-      student: studentMap.get(r.studentId),
-      sessions: r._count.id,
+    const rankings = results.map(r => ({
+      wordSetId: r.wordSetId,
+      name: r.name,
+      emoji: r.emoji,
+      volumeTop3: r.volumeTop3Raw.map(([id, sessions], i) => ({
+        rank: i + 1,
+        student: studentMap.get(id),
+        sessions,
+      })),
+      scoreTop3: r.scoreTop3Raw.map(([id, avg], i) => ({
+        rank: i + 1,
+        student: studentMap.get(id),
+        avgAccuracy: Math.round(avg * 100),
+      })),
     }));
 
-    const scoreTop3 = scoreTop3Raw.map(([studentId, acc], i) => ({
-      rank: i + 1,
-      student: studentMap.get(studentId),
-      bestAccuracy: Math.round(acc * 100),
-    }));
-
-    return NextResponse.json({ volumeTop3, scoreTop3 });
+    return NextResponse.json({ rankings });
   } catch {
-    return NextResponse.json({ volumeTop3: [], scoreTop3: [] });
+    return NextResponse.json({ rankings: [] });
   }
 }
