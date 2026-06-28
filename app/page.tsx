@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 const AVATARS = ["🐥", "🐶", "🐱", "🐰", "🐻", "🦊", "🐸", "🐧", "🦄", "🐯"];
 
 interface RankStudent { id: number; name: string; avatar: string; }
-interface VolumeEntry { rank: number; student: RankStudent; sessions: number; totalQuestions: number; }
-interface ScoreEntry  { rank: number; student: RankStudent; totalScore: number; }
+interface VolumeEntry { rank: number; student: RankStudent; sessions: number; }
+interface ScoreEntry  { rank: number; student: RankStudent; bestAccuracy: number; }
 
 const RANK_MEDALS = ["🥇", "🥈", "🥉"];
 
@@ -67,7 +67,7 @@ export default function MainPage() {
                       <span className="text-xl">{entry.student?.avatar}</span>
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm truncate">{entry.student?.name}</p>
-                        <p className="text-xs text-purple-200">{entry.totalQuestions}문제</p>
+                        <p className="text-xs text-purple-200">{entry.sessions}회 도전</p>
                       </div>
                     </div>
                   ))}
@@ -87,7 +87,7 @@ export default function MainPage() {
                       <span className="text-xl">{entry.student?.avatar}</span>
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm truncate">{entry.student?.name}</p>
-                        <p className="text-xs text-purple-200">{entry.totalScore}점</p>
+                        <p className="text-xs text-purple-200">최고 {entry.bestAccuracy}%</p>
                       </div>
                     </div>
                   ))}
