@@ -2,6 +2,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
+function speak(text: string) {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = "en-US";
+  utt.rate = 0.9;
+  window.speechSynthesis.speak(utt);
+}
+
 interface WordSet { id: number; name: string; emoji: string; description: string; _count: { words: number }; }
 interface Word    { id: number; english: string; korean: string; }
 
@@ -202,47 +211,17 @@ export default function ChallengePage() {
   const totalBatches = batches.length;
   const progressPct = totalBatches > 0 ? Math.round((batchIdx / totalBatches) * 100) : 0;
 
-  // ── 외우기 ──
+  // ── 외우기 (플래시카드) ──
   if (screen === "study") {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        {/* 상단 */}
-        <div className="bg-white px-4 py-3 shadow-sm flex items-center gap-3">
-          <button onClick={() => setScreen("select-set")} className="text-gray-400 text-sm">✕</button>
-          <div className="flex-1">
-            <p className="text-xs text-gray-400">{selectedSet?.emoji} {selectedSet?.name}</p>
-            <p className="text-sm font-bold text-gray-700">그룹 {batchIdx + 1} / {totalBatches} · 외우기</p>
-          </div>
-          <span className="text-sm font-bold text-violet-500">{progressPct}%</span>
-        </div>
-        <div className="h-2 bg-gray-200">
-          <div className="h-full bg-violet-400 transition-all duration-500 rounded-r-full" style={{ width: `${progressPct}%` }} />
-        </div>
-
-        <div key={animKey} className="bounce-in flex-1 max-w-lg mx-auto w-full px-4 py-5 flex flex-col gap-3">
-          <div className="bg-violet-50 rounded-2xl px-4 py-3 text-center mb-1">
-            <p className="text-sm font-bold text-violet-600">📖 아래 단어 {currentBatch.length}개를 외워보세요!</p>
-          </div>
-
-          {currentBatch.map((w, i) => (
-            <div key={w.id} className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-4 border border-gray-100">
-              <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 font-extrabold text-sm shrink-0">
-                {i + 1}
-              </div>
-              <div className="flex-1">
-                <p className="font-extrabold text-gray-800 text-lg">{w.english}</p>
-                <p className="text-gray-500 text-sm mt-0.5">{w.korean}</p>
-              </div>
-            </div>
-          ))}
-
-          <button onClick={() => startQuiz("quiz-mtw", currentBatch)}
-            className="mt-3 w-full py-4 rounded-2xl text-white font-extrabold text-lg shadow-lg bg-gradient-to-r from-violet-500 to-indigo-500">
-            외웠어요! 테스트 시작 →
-          </button>
-        </div>
-      </div>
-    );
+    return <FlashCards
+      batch={currentBatch}
+      batchIdx={batchIdx}
+      totalBatches={totalBatches}
+      progressPct={progressPct}
+      selectedSet={selectedSet}
+      onExit={() => setScreen("select-set")}
+      onDone={() => startQuiz("quiz-mtw", currentBatch)}
+    />;
   }
 
   // ── 배치 결과 ──
@@ -433,6 +412,160 @@ export default function ChallengePage() {
               확인 ✓
             </button>
           </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── 플래시카드 컴포넌트 ──
+function FlashCards({ batch, batchIdx, totalBatches, progressPct, selectedSet, onExit, onDone }: {
+  batch: Word[];
+  batchIdx: number;
+  totalBatches: number;
+  progressPct: number;
+  selectedSet: WordSet | null;
+  onExit: () => void;
+  onDone: () => void;
+}) {
+  const [cardIdx, setCardIdx]     = useState(0);
+  const [flipped, setFlipped]     = useState(false);
+  const [allSeen, setAllSeen]     = useState(false);
+  const [seenSet, setSeenSet]     = useState<Set<number>>(new Set());
+
+  const word = batch[cardIdx];
+
+  // 카드 바뀔 때마다 영어 발음 자동 재생
+  useEffect(() => {
+    if (word) {
+      setFlipped(false);
+      setTimeout(() => speak(word.english), 200);
+    }
+  }, [cardIdx, word?.english]);
+
+  // 처음 마운트 시
+  useEffect(() => {
+    setCardIdx(0);
+    setFlipped(false);
+    setSeenSet(new Set());
+    setAllSeen(false);
+  }, [batch]);
+
+  function goNext() {
+    const newSeen = new Set(seenSet).add(cardIdx);
+    setSeenSet(newSeen);
+    if (cardIdx < batch.length - 1) {
+      setCardIdx(i => i + 1);
+    } else {
+      setAllSeen(true);
+    }
+  }
+
+  function goPrev() {
+    if (cardIdx > 0) setCardIdx(i => i - 1);
+  }
+
+  function handleFlip() {
+    setFlipped(f => !f);
+    if (!flipped) {
+      // 뒷면(한국어) 보일 때 한국어는 소리 안 냄
+    } else {
+      speak(word.english);
+    }
+  }
+
+  if (!word) return null;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-violet-600 to-indigo-700 flex flex-col">
+      {/* 상단 */}
+      <div className="px-4 py-4 flex items-center gap-3">
+        <button onClick={onExit} className="text-white/60 hover:text-white text-sm">✕</button>
+        <div className="flex-1 text-center">
+          <p className="text-white/70 text-xs">{selectedSet?.emoji} {selectedSet?.name} · 그룹 {batchIdx + 1}/{totalBatches}</p>
+          <p className="text-white font-bold text-sm">📖 외우기</p>
+        </div>
+        <span className="text-white/60 text-sm">{cardIdx + 1}/{batch.length}</span>
+      </div>
+
+      {/* 진행 점 */}
+      <div className="flex justify-center gap-2 mb-4">
+        {batch.map((_, i) => (
+          <div key={i} className={`h-2 rounded-full transition-all ${
+            i === cardIdx ? "w-6 bg-white" : seenSet.has(i) ? "w-2 bg-white/60" : "w-2 bg-white/25"
+          }`} />
+        ))}
+      </div>
+
+      {/* 카드 */}
+      <div className="flex-1 flex flex-col items-center justify-center px-5">
+        <div
+          onClick={handleFlip}
+          className="w-full max-w-sm cursor-pointer select-none"
+          style={{ perspective: "1000px" }}
+        >
+          <div style={{
+            position: "relative",
+            width: "100%",
+            paddingBottom: "65%",
+            transformStyle: "preserve-3d",
+            transition: "transform 0.45s cubic-bezier(.4,0,.2,1)",
+            transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
+          }}>
+            {/* 앞면: 영어 */}
+            <div style={{
+              position: "absolute", inset: 0, backfaceVisibility: "hidden",
+            }} className="bg-white rounded-3xl shadow-2xl flex flex-col items-center justify-center p-8 text-center">
+              <p className="text-xs text-gray-400 mb-3 font-bold tracking-widest uppercase">English</p>
+              <p className="text-4xl font-extrabold text-gray-800 leading-snug">{word.english}</p>
+              <button
+                onClick={e => { e.stopPropagation(); speak(word.english); }}
+                className="mt-5 w-12 h-12 rounded-full bg-violet-100 hover:bg-violet-200 flex items-center justify-center text-2xl transition-all"
+              >
+                🔊
+              </button>
+              <p className="mt-4 text-xs text-gray-300">탭하면 뜻이 보여요</p>
+            </div>
+            {/* 뒷면: 한국어 */}
+            <div style={{
+              position: "absolute", inset: 0, backfaceVisibility: "hidden",
+              transform: "rotateY(180deg)",
+            }} className="bg-gradient-to-br from-violet-500 to-indigo-500 rounded-3xl shadow-2xl flex flex-col items-center justify-center p-8 text-center">
+              <p className="text-xs text-white/60 mb-3 font-bold tracking-widest uppercase">한국어</p>
+              <p className="text-4xl font-extrabold text-white leading-snug">{word.korean}</p>
+              <p className="mt-3 text-white/70 text-lg font-semibold">{word.english}</p>
+              <button
+                onClick={e => { e.stopPropagation(); speak(word.english); }}
+                className="mt-5 w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-2xl transition-all"
+              >
+                🔊
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 이전/다음 버튼 */}
+        <div className="flex gap-4 mt-8 w-full max-w-sm">
+          <button onClick={goPrev} disabled={cardIdx === 0}
+            className="flex-1 py-3.5 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-bold transition-all disabled:opacity-30">
+            ← 이전
+          </button>
+          {allSeen || cardIdx === batch.length - 1 ? (
+            <button onClick={onDone}
+              className="flex-1 py-3.5 rounded-2xl bg-white text-violet-600 font-extrabold transition-all shadow-lg">
+              테스트 시작! →
+            </button>
+          ) : (
+            <button onClick={goNext}
+              className="flex-1 py-3.5 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-bold transition-all">
+              다음 →
+            </button>
+          )}
+        </div>
+        {!allSeen && cardIdx < batch.length - 1 && (
+          <button onClick={onDone} className="mt-3 text-white/40 hover:text-white/70 text-sm transition-all">
+            외우기 건너뛰고 바로 테스트
+          </button>
         )}
       </div>
     </div>
