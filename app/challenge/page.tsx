@@ -268,15 +268,11 @@ export default function ChallengePage() {
                 {isLast ? "🎊 전체 완료!" : `다음 그룹 (${batchIdx + 2}/${totalBatches}) →`}
               </button>
             ) : (
-              <button onClick={() => startQuiz("quiz-mtw", currentBatch)}
+              <button onClick={() => { setScreen("study"); setAnimKey(k => k + 1); }}
                 className="w-full py-4 rounded-2xl text-white font-extrabold text-lg bg-gradient-to-r from-red-400 to-orange-400 shadow-lg">
-                🔄 테스트 다시 도전!
+                📖 카드부터 다시 외우기!
               </button>
             )}
-            <button onClick={() => { setScreen("study"); setAnimKey(k => k + 1); }}
-              className="w-full py-3 rounded-2xl border-2 border-violet-300 text-violet-600 font-bold text-sm">
-              📖 카드 다시 보기
-            </button>
           </div>
         </div>
       </div>
