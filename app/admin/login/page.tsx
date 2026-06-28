@@ -32,9 +32,9 @@ export default function AdminLoginPage() {
           <p className="text-sm text-gray-400 mt-1">관리자 계정으로 로그인해주세요</p>
         </div>
         <div>
-          <label className="text-sm font-bold text-gray-500 mb-1 block">이메일</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
-            placeholder="이메일 주소"
+          <label className="text-sm font-bold text-gray-500 mb-1 block">아이디</label>
+          <input type="text" value={email} onChange={e => setEmail(e.target.value)} required
+            placeholder="아이디"
             className="w-full border-2 border-gray-200 focus:border-slate-400 rounded-xl px-4 py-3 outline-none transition-all" />
         </div>
         <div>
