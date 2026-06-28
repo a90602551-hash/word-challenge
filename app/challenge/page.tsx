@@ -228,40 +228,54 @@ export default function ChallengePage() {
   if (screen === "batch-result") {
     const batchTotal = currentBatch.length * 3;
     const pct = batchTotal > 0 ? Math.round((batchScore / batchTotal) * 100) : 0;
-    const emoji = pct === 100 ? "🏆" : pct >= 70 ? "🎉" : pct >= 40 ? "😊" : "💪";
-    const msg   = pct === 100 ? "완벽해요!" : pct >= 70 ? "잘했어요!" : pct >= 40 ? "좋아요!" : "다시 도전해봐요!";
+    const passed = pct >= 90;
     const isLast = batchIdx + 1 >= batches.length;
+
+    const emoji = pct === 100 ? "🏆" : pct >= 90 ? "🎉" : pct >= 60 ? "😅" : "💪";
+    const msg   = pct === 100 ? "완벽해요!" : pct >= 90 ? "통과! 잘했어요!" : pct >= 60 ? "조금 더 해봐요!" : "다시 도전해요!";
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-violet-500 to-indigo-600 flex flex-col items-center justify-center px-4">
         <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm text-center bounce-in">
           <div className="text-6xl mb-2">{emoji}</div>
           <h2 className="text-2xl font-extrabold text-gray-800 mb-1">{msg}</h2>
-          <p className="text-gray-400 text-sm mb-5">그룹 {batchIdx + 1} 완료!</p>
+          <p className="text-gray-400 text-sm mb-5">그룹 {batchIdx + 1} · 정확도 {pct}%</p>
 
           <div className="flex justify-center gap-4 mb-5">
             <div className="bg-violet-50 rounded-2xl px-5 py-4">
               <p className="text-3xl font-extrabold text-violet-600">{batchScore}<span className="text-lg">/{batchTotal}</span></p>
               <p className="text-xs text-gray-400 mt-1">정답</p>
             </div>
-            <div className="bg-yellow-50 rounded-2xl px-5 py-4">
-              <p className="text-3xl font-extrabold text-yellow-500">{pct}%</p>
+            <div className={`rounded-2xl px-5 py-4 ${passed ? "bg-green-50" : "bg-red-50"}`}>
+              <p className={`text-3xl font-extrabold ${passed ? "text-green-500" : "text-red-400"}`}>{pct}%</p>
               <p className="text-xs text-gray-400 mt-1">정확도</p>
             </div>
           </div>
 
-          <div className="h-2.5 bg-gray-100 rounded-full mb-6">
-            <div className="h-full rounded-full bg-violet-400 transition-all" style={{ width: `${pct}%` }} />
+          {/* 진행 바 */}
+          <div className="h-2.5 bg-gray-100 rounded-full mb-2">
+            <div className="h-full rounded-full transition-all"
+              style={{ width: `${pct}%`, background: passed ? "#22c55e" : "#f87171" }} />
           </div>
+          <p className="text-xs text-gray-400 mb-6">
+            {passed ? "✅ 90% 이상 달성!" : "⚠️ 다음 단계로 가려면 90% 이상이어야 해요"}
+          </p>
 
           <div className="space-y-3">
-            <button onClick={nextBatch}
-              className="w-full py-4 rounded-2xl text-white font-extrabold text-lg bg-gradient-to-r from-violet-500 to-indigo-500 shadow-lg">
-              {isLast ? "🎊 전체 완료!" : `다음 그룹 (${batchIdx + 2}/${totalBatches}) →`}
-            </button>
+            {passed ? (
+              <button onClick={nextBatch}
+                className="w-full py-4 rounded-2xl text-white font-extrabold text-lg bg-gradient-to-r from-violet-500 to-indigo-500 shadow-lg">
+                {isLast ? "🎊 전체 완료!" : `다음 그룹 (${batchIdx + 2}/${totalBatches}) →`}
+              </button>
+            ) : (
+              <button onClick={() => startQuiz("quiz-mtw", currentBatch)}
+                className="w-full py-4 rounded-2xl text-white font-extrabold text-lg bg-gradient-to-r from-red-400 to-orange-400 shadow-lg">
+                🔄 테스트 다시 도전!
+              </button>
+            )}
             <button onClick={() => { setScreen("study"); setAnimKey(k => k + 1); }}
               className="w-full py-3 rounded-2xl border-2 border-violet-300 text-violet-600 font-bold text-sm">
-              🔄 이 그룹 다시 하기
+              📖 카드 다시 보기
             </button>
           </div>
         </div>
@@ -562,11 +576,6 @@ function FlashCards({ batch, batchIdx, totalBatches, progressPct, selectedSet, o
             </button>
           )}
         </div>
-        {!allSeen && cardIdx < batch.length - 1 && (
-          <button onClick={onDone} className="mt-3 text-white/40 hover:text-white/70 text-sm transition-all">
-            외우기 건너뛰고 바로 테스트
-          </button>
-        )}
       </div>
     </div>
   );
