@@ -179,14 +179,16 @@ export default function ChallengePage() {
     }
     setTimeout(() => {
       setCopyTyped(""); setCopyOk(null);
-      const nextIdx = copyIdx + 1;
-      if (nextIdx < currentBatch.length) {
-        setCopyIdx(nextIdx);
+      const nextRound = copyRound + 1;
+      if (nextRound <= COPY_ROUNDS) {
+        // 같은 단어 다음 회차
+        setCopyRound(nextRound);
       } else {
-        const nextRound = copyRound + 1;
-        if (nextRound <= COPY_ROUNDS) {
-          setCopyRound(nextRound);
-          setCopyIdx(0);
+        // 이 단어 3번 완료 → 다음 단어
+        const nextIdx = copyIdx + 1;
+        if (nextIdx < currentBatch.length) {
+          setCopyIdx(nextIdx);
+          setCopyRound(1);
         } else {
           setQuizIdx(0); setSelected(null); setIsCorrect(null); setTyped("");
           setScreen("quiz-typing");
