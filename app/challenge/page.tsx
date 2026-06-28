@@ -14,7 +14,7 @@ function speak(text: string) {
 interface WordSet { id: number; name: string; emoji: string; description: string; _count: { words: number }; }
 interface Word    { id: number; english: string; korean: string; }
 
-type Screen = "select-set" | "study" | "quiz-mtw" | "quiz-wtm" | "copy-typing" | "quiz-typing" | "batch-result" | "all-done";
+type Screen = "select-set" | "study" | "quiz-mtw" | "quiz-wtm" | "copy-typing" | "quiz-typing" | "stage-fail" | "batch-result" | "all-done";
 const COPY_ROUNDS = 3;
 
 const BATCH_SIZE = 5;
@@ -47,9 +47,11 @@ export default function ChallengePage() {
   const [selected, setSelected]     = useState<string | null>(null);
   const [isCorrect, setIsCorrect]   = useState<boolean | null>(null);
   const [typed, setTyped]           = useState("");
-  const [totalScore, setTotalScore] = useState(0);
-  const [batchScore, setBatchScore] = useState(0);
+  const [totalScore, setTotalScore]     = useState(0);
+  const [batchScore, setBatchScore]     = useState(0);
   const [totalQuestions, setTotalQuestions] = useState(0);
+  const [stageCorrect, setStageCorrect] = useState(0);  // 현재 단계 정답 수
+  const [stageFailed, setStageFailed]   = useState<Screen | null>(null); // 실패한 단계
   const [animKey, setAnimKey]       = useState(0);
   const [copyRound, setCopyRound]   = useState(1);  // 1~3
   const [copyIdx, setCopyIdx]       = useState(0);
@@ -95,6 +97,7 @@ export default function ChallengePage() {
     setIsCorrect(null);
     setTyped("");
     setBatchScore(0);
+    setStageCorrect(0);
     buildChoices(s, batch, idx);
     setScreen(s);
     setAnimKey(k => k + 1);
@@ -114,9 +117,9 @@ export default function ChallengePage() {
     const ok = choice === correct;
     setSelected(choice);
     setIsCorrect(ok);
-    if (ok) { setTotalScore(s => s + 1); setBatchScore(s => s + 1); }
+    if (ok) { setTotalScore(s => s + 1); setBatchScore(s => s + 1); setStageCorrect(s => s + 1); }
     setTotalQuestions(n => n + 1);
-    setTimeout(() => nextQuizStep(), 800);
+    setTimeout(() => nextQuizStep(ok), 800);
   }
 
   function handleTypingSubmit(e: React.FormEvent) {
@@ -125,12 +128,12 @@ export default function ChallengePage() {
     const q = currentBatch[quizIdx];
     const ok = typed.trim().toLowerCase() === q.english.toLowerCase();
     setIsCorrect(ok);
-    if (ok) { setTotalScore(s => s + 1); setBatchScore(s => s + 1); }
+    if (ok) { setTotalScore(s => s + 1); setBatchScore(s => s + 1); setStageCorrect(s => s + 1); }
     setTotalQuestions(n => n + 1);
-    setTimeout(() => { nextQuizStep(); setTyped(""); }, 800);
+    setTimeout(() => { nextQuizStep(ok); setTyped(""); }, 800);
   }
 
-  function nextQuizStep() {
+  function nextQuizStep(lastCorrect = true) {
     const nextIdx = quizIdx + 1;
     if (nextIdx < currentBatch.length) {
       setQuizIdx(nextIdx);
@@ -139,13 +142,21 @@ export default function ChallengePage() {
       if (screen !== "quiz-typing") buildChoices(screen, currentBatch, nextIdx);
       setAnimKey(k => k + 1);
     } else {
-      // 현재 퀴즈 단계 끝 → 다음 단계로
+      // 단계 끝 → 90% 통과 여부 계산 (마지막 문제 포함)
+      const correct = stageCorrect + (lastCorrect ? 1 : 0);
+      const total   = currentBatch.length;
+      const passed  = correct / total >= 0.9;
+
       if (screen === "quiz-mtw") {
+        if (!passed) { setStageFailed("quiz-mtw"); setScreen("stage-fail"); return; }
         setQuizIdx(0); setSelected(null); setIsCorrect(null); setTyped("");
+        setStageCorrect(0);
         buildChoices("quiz-wtm", currentBatch, 0);
         setScreen("quiz-wtm");
         setAnimKey(k => k + 1);
       } else if (screen === "quiz-wtm") {
+        if (!passed) { setStageFailed("quiz-wtm"); setScreen("stage-fail"); return; }
+        setStageCorrect(0);
         setCopyRound(1); setCopyIdx(0); setCopyTyped(""); setCopyOk(null);
         setScreen("copy-typing");
         setAnimKey(k => k + 1);
@@ -322,6 +333,28 @@ export default function ChallengePage() {
           @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
           .animate-shake { animation: shake 0.45s ease; }
         `}</style>
+      </div>
+    );
+  }
+
+  // ── 단계 실패 ──
+  if (screen === "stage-fail") {
+    const stageLabel = stageFailed === "quiz-mtw" ? "뜻 보고 단어 고르기" : "단어 보고 뜻 고르기";
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-400 to-orange-500 flex flex-col items-center justify-center px-4">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm text-center">
+          <div className="text-6xl mb-3">😅</div>
+          <h2 className="text-2xl font-extrabold text-gray-800 mb-1">아직 부족해요!</h2>
+          <p className="text-gray-500 text-sm mb-2">
+            <span className="font-bold text-red-400">"{stageLabel}"</span> 단계를<br/>90% 이상 맞춰야 다음으로 갈 수 있어요
+          </p>
+          <p className="text-gray-400 text-xs mb-6">단어를 다시 외우고 도전해보세요 💪</p>
+          <button
+            onClick={() => { setScreen("study"); setAnimKey(k => k + 1); }}
+            className="w-full py-4 rounded-2xl text-white font-extrabold text-lg bg-gradient-to-r from-violet-500 to-indigo-500 shadow-lg">
+            📖 처음부터 다시 외우기
+          </button>
+        </div>
       </div>
     );
   }
