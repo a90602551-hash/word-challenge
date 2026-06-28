@@ -36,8 +36,9 @@ function getChoices(correct: Word, allWords: Word[], type: "english" | "korean")
 
 export default function ChallengePage() {
   const router = useRouter();
-  const [wordSets, setWordSets]     = useState<WordSet[]>([]);
-  const [allWords, setAllWords]     = useState<Word[]>([]);
+  const [wordSets, setWordSets]       = useState<WordSet[]>([]);
+  const [progressMap, setProgressMap] = useState<Record<number, number>>({});  // wordSetId → batchIdx
+  const [allWords, setAllWords]       = useState<Word[]>([]);
   const [batches, setBatches]       = useState<Word[][]>([]);
   const [selectedSet, setSelectedSet] = useState<WordSet | null>(null);
   const [screen, setScreen]         = useState<Screen>("select-set");
@@ -62,7 +63,16 @@ export default function ChallengePage() {
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => { if (!r.ok) router.push("/"); }).catch(() => router.push("/"));
-    fetch("/api/wordsets").then(r => r.json()).then(setWordSets).catch(() => {});
+    fetch("/api/wordsets").then(r => r.json()).then((sets: WordSet[]) => {
+      setWordSets(sets);
+      // 각 학년의 진도 조회
+      Promise.all(sets.map(ws => fetch(`/api/progress?wordSetId=${ws.id}`).then(r => r.ok ? r.json() : null)))
+        .then(results => {
+          const map: Record<number, number> = {};
+          results.forEach((p, i) => { if (p?.batchIdx > 0) map[sets[i].id] = p.batchIdx; });
+          setProgressMap(map);
+        }).catch(() => {});
+    }).catch(() => {});
   }, [router]);
 
   useEffect(() => {
@@ -73,22 +83,52 @@ export default function ChallengePage() {
   const currentBatch = batches[batchIdx] ?? [];
 
   async function selectSet(ws: WordSet) {
-    const res = await fetch(`/api/wordsets/${ws.id}/words`);
-    const words: Word[] = await res.json();
+    const [wordsRes, progressRes] = await Promise.all([
+      fetch(`/api/wordsets/${ws.id}/words`),
+      fetch(`/api/progress?wordSetId=${ws.id}`),
+    ]);
+    const words: Word[] = await wordsRes.json();
     if (words.length < 4) { alert("단어가 최소 4개 이상 필요해요!"); return; }
-    const shuffled = shuffle(words);
-    const bs: Word[][] = [];
-    for (let i = 0; i < shuffled.length; i += BATCH_SIZE) {
-      bs.push(shuffled.slice(i, i + BATCH_SIZE));
+
+    const progress = progressRes.ok ? await progressRes.json() : null;
+
+    let ordered: Word[];
+    let startBatch = 0;
+
+    if (progress?.wordOrder) {
+      const ids: number[] = JSON.parse(progress.wordOrder);
+      const wordMap = new Map(words.map(w => [w.id, w]));
+      const restored = ids.map(id => wordMap.get(id)).filter(Boolean) as Word[];
+      // 저장된 순서에 없는 새 단어는 뒤에 추가
+      const missing = words.filter(w => !ids.includes(w.id));
+      ordered = [...restored, ...missing];
+      startBatch = progress.batchIdx ?? 0;
+    } else {
+      ordered = shuffle(words);
     }
+
+    const bs: Word[][] = [];
+    for (let i = 0; i < ordered.length; i += BATCH_SIZE) {
+      bs.push(ordered.slice(i, i + BATCH_SIZE));
+    }
+
     setAllWords(words);
     setBatches(bs);
     setSelectedSet(ws);
-    setBatchIdx(0);
+    setBatchIdx(startBatch);
     setTotalScore(0);
     setTotalQuestions(0);
     setScreen("study");
     setAnimKey(k => k + 1);
+
+    // 진도 없으면 초기 저장
+    if (!progress) {
+      fetch("/api/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wordSetId: ws.id, batchIdx: 0, wordOrder: ordered.map(w => w.id) }),
+      }).catch(() => {});
+    }
   }
 
   function startQuiz(s: Screen, batch: Word[], idx = 0) {
@@ -216,11 +256,20 @@ export default function ChallengePage() {
   function nextBatch() {
     const next = batchIdx + 1;
     if (next >= batches.length) {
+      // 완료 → 진도 삭제
+      fetch(`/api/progress?wordSetId=${selectedSet?.id}`, { method: "DELETE" }).catch(() => {});
       setScreen("all-done");
     } else {
       setBatchIdx(next);
       setScreen("study");
       setAnimKey(k => k + 1);
+      // 다음 배치 진도 저장
+      const wordOrder = batches.flat().map(w => w.id);
+      fetch("/api/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wordSetId: selectedSet?.id, batchIdx: next, wordOrder }),
+      }).catch(() => {});
     }
   }
 
@@ -240,17 +289,32 @@ export default function ChallengePage() {
           </div>
           <p className="text-purple-200 text-sm mb-5">학년을 선택하면 5개씩 묶어서 외우고 테스트해요!</p>
           <div className="grid grid-cols-2 gap-4">
-            {wordSets.map(ws => (
-              <button key={ws.id} onClick={() => selectSet(ws)}
-                className="bg-white rounded-2xl p-5 text-left shadow-lg hover:scale-105 active:scale-95 transition-transform">
-                <p className="text-4xl mb-2">{ws.emoji}</p>
-                <p className="font-extrabold text-gray-800 text-lg">{ws.name}</p>
-                <p className="text-xs text-gray-400 mt-1">{ws._count.words}개 단어</p>
-                <p className="text-xs text-purple-400 mt-1 font-bold">
-                  {Math.ceil(ws._count.words / BATCH_SIZE)}그룹 × 5단어
-                </p>
-              </button>
-            ))}
+            {wordSets.map(ws => {
+              const savedBatch = progressMap[ws.id];
+              const totalGroups = Math.ceil(ws._count.words / BATCH_SIZE);
+              return (
+                <button key={ws.id} onClick={() => selectSet(ws)}
+                  className="bg-white rounded-2xl p-5 text-left shadow-lg hover:scale-105 active:scale-95 transition-transform relative">
+                  {savedBatch > 0 && (
+                    <span className="absolute top-3 right-3 bg-violet-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                      이어하기
+                    </span>
+                  )}
+                  <p className="text-4xl mb-2">{ws.emoji}</p>
+                  <p className="font-extrabold text-gray-800 text-lg">{ws.name}</p>
+                  <p className="text-xs text-gray-400 mt-1">{ws._count.words}개 단어</p>
+                  {savedBatch > 0 ? (
+                    <p className="text-xs text-violet-500 mt-1 font-bold">
+                      {savedBatch}/{totalGroups} 그룹 완료
+                    </p>
+                  ) : (
+                    <p className="text-xs text-purple-400 mt-1 font-bold">
+                      {totalGroups}그룹 × 5단어
+                    </p>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

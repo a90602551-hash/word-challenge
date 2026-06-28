@@ -23,7 +23,8 @@ model Student {
   username        String           @unique
   passwordHash    String           @default("")
   avatar          String           @default("🐥")
-  challengeScores ChallengeScore[]
+  challengeScores   ChallengeScore[]
+  learningProgress  LearningProgress[]
   createdAt       DateTime         @default(now())
 }
 
@@ -46,6 +47,18 @@ model Word {
   korean    String
   order     Int      @default(0)
   createdAt DateTime @default(now())
+}
+
+model LearningProgress {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  wordSetId Int
+  batchIdx  Int      @default(0)
+  wordOrder String   // JSON: shuffled word ID array
+  updatedAt DateTime @updatedAt
+
+  @@unique([studentId, wordSetId])
 }
 
 model ChallengeScore {
