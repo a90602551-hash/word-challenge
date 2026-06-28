@@ -14,7 +14,8 @@ function speak(text: string) {
 interface WordSet { id: number; name: string; emoji: string; description: string; _count: { words: number }; }
 interface Word    { id: number; english: string; korean: string; }
 
-type Screen = "select-set" | "study" | "quiz-mtw" | "quiz-wtm" | "quiz-typing" | "batch-result" | "all-done";
+type Screen = "select-set" | "study" | "quiz-mtw" | "quiz-wtm" | "copy-typing" | "quiz-typing" | "batch-result" | "all-done";
+const COPY_ROUNDS = 3;
 
 const BATCH_SIZE = 5;
 
@@ -50,7 +51,12 @@ export default function ChallengePage() {
   const [batchScore, setBatchScore] = useState(0);
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [animKey, setAnimKey]       = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [copyRound, setCopyRound]   = useState(1);  // 1~3
+  const [copyIdx, setCopyIdx]       = useState(0);
+  const [copyTyped, setCopyTyped]   = useState("");
+  const [copyOk, setCopyOk]         = useState<boolean | null>(null);
+  const inputRef     = useRef<HTMLInputElement>(null);
+  const copyInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => { if (!r.ok) router.push("/"); }).catch(() => router.push("/"));
@@ -59,7 +65,8 @@ export default function ChallengePage() {
 
   useEffect(() => {
     if (screen === "quiz-typing") inputRef.current?.focus();
-  }, [screen, quizIdx]);
+    if (screen === "copy-typing") { setCopyTyped(""); setCopyOk(null); setTimeout(() => copyInputRef.current?.focus(), 100); }
+  }, [screen, quizIdx, copyIdx, copyRound]);
 
   const currentBatch = batches[batchIdx] ?? [];
 
@@ -139,14 +146,43 @@ export default function ChallengePage() {
         setScreen("quiz-wtm");
         setAnimKey(k => k + 1);
       } else if (screen === "quiz-wtm") {
-        setQuizIdx(0); setSelected(null); setIsCorrect(null); setTyped("");
-        setScreen("quiz-typing");
+        setCopyRound(1); setCopyIdx(0); setCopyTyped(""); setCopyOk(null);
+        setScreen("copy-typing");
         setAnimKey(k => k + 1);
       } else if (screen === "quiz-typing") {
         setScreen("batch-result");
         saveBatchScore();
       }
     }
+  }
+
+  function handleCopySubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (copyOk !== null) return;
+    const q = currentBatch[copyIdx];
+    const ok = copyTyped.trim().toLowerCase() === q.english.toLowerCase();
+    setCopyOk(ok);
+    if (!ok) {
+      setTimeout(() => { setCopyTyped(""); setCopyOk(null); copyInputRef.current?.focus(); }, 700);
+      return;
+    }
+    setTimeout(() => {
+      setCopyTyped(""); setCopyOk(null);
+      const nextIdx = copyIdx + 1;
+      if (nextIdx < currentBatch.length) {
+        setCopyIdx(nextIdx);
+      } else {
+        const nextRound = copyRound + 1;
+        if (nextRound <= COPY_ROUNDS) {
+          setCopyRound(nextRound);
+          setCopyIdx(0);
+        } else {
+          setQuizIdx(0); setSelected(null); setIsCorrect(null); setTyped("");
+          setScreen("quiz-typing");
+          setAnimKey(k => k + 1);
+        }
+      }
+    }, 600);
   }
 
   async function saveBatchScore() {
@@ -222,6 +258,72 @@ export default function ChallengePage() {
       onExit={() => setScreen("select-set")}
       onDone={() => startQuiz("quiz-mtw", currentBatch)}
     />;
+  }
+
+  // ── 따라쓰기 ──
+  if (screen === "copy-typing") {
+    const cq = currentBatch[copyIdx];
+    if (!cq) return null;
+    const copyProgress = ((copyRound - 1) * currentBatch.length + copyIdx) / (COPY_ROUNDS * currentBatch.length) * 100;
+
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-emerald-500 to-teal-600 flex flex-col">
+        <div className="px-4 py-4 flex items-center gap-3">
+          <button onClick={() => setScreen("study")} className="text-white/60 hover:text-white text-sm">← 외우기</button>
+          <div className="flex-1 text-center">
+            <p className="text-white/70 text-xs">그룹 {batchIdx + 1}/{totalBatches} · 따라쓰기</p>
+            <p className="text-white font-bold text-sm">⌨️ 보고 따라쓰기 {copyRound}/{COPY_ROUNDS}회</p>
+          </div>
+          <span className="text-white/60 text-sm">{copyIdx + 1}/{currentBatch.length}</span>
+        </div>
+
+        <div className="h-2 bg-white/20">
+          <div className="h-full bg-white/70 transition-all duration-500 rounded-r-full" style={{ width: `${copyProgress}%` }} />
+        </div>
+
+        <div className="flex-1 flex flex-col items-center justify-center px-5 gap-5">
+          {/* 단어 카드 - 영어+한국어 동시 표시 */}
+          <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-7 text-center">
+            <p className="text-xs text-gray-400 mb-1 font-bold tracking-widest uppercase">따라 써보세요</p>
+            <p className="text-4xl font-extrabold text-gray-800 mb-1">{cq.english}</p>
+            <p className="text-lg text-emerald-500 font-bold">{cq.korean}</p>
+            <button onClick={() => speak(cq.english)} className="mt-3 w-10 h-10 rounded-full bg-emerald-100 hover:bg-emerald-200 inline-flex items-center justify-center text-lg transition-all">
+              🔊
+            </button>
+          </div>
+
+          {/* 입력 */}
+          <form onSubmit={handleCopySubmit} className="w-full max-w-sm space-y-3">
+            <input
+              ref={copyInputRef}
+              type="text"
+              value={copyTyped}
+              onChange={e => { setCopyTyped(e.target.value); setCopyOk(null); }}
+              disabled={copyOk === true}
+              placeholder={cq.english.replace(/./g, "_ ")}
+              autoComplete="off" autoCorrect="off" spellCheck={false}
+              className={`w-full border-2 rounded-2xl px-5 py-4 text-xl text-center font-bold outline-none transition-all
+                ${copyOk === true ? "border-emerald-400 bg-emerald-50 text-emerald-600" :
+                  copyOk === false ? "border-red-400 bg-red-50 animate-shake" :
+                  "border-white/50 bg-white focus:border-emerald-300"}`}
+            />
+            {copyOk === true  && <p className="text-center text-emerald-600 font-extrabold">✅ 잘했어요!</p>}
+            {copyOk === false && <p className="text-center text-red-500 font-bold text-sm">❌ 다시 입력해보세요</p>}
+            {copyOk === null && (
+              <button type="submit" disabled={!copyTyped.trim()}
+                className="w-full py-4 rounded-2xl text-white font-extrabold text-lg bg-white/20 hover:bg-white/30 disabled:opacity-40 transition-all">
+                확인 ✓
+              </button>
+            )}
+          </form>
+        </div>
+
+        <style>{`
+          @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
+          .animate-shake { animation: shake 0.45s ease; }
+        `}</style>
+      </div>
+    );
   }
 
   // ── 배치 결과 ──
@@ -428,7 +530,7 @@ export default function ChallengePage() {
   );
 }
 
-// ── 플래시카드 컴포넌트 (선택형 외우기) ──
+// ── 플래시카드 컴포넌트 (보기 → 선택 두 단계) ──
 function FlashCards({ batch, batchIdx, totalBatches, selectedSet, onExit, onDone }: {
   batch: Word[];
   batchIdx: number;
@@ -438,58 +540,57 @@ function FlashCards({ batch, batchIdx, totalBatches, selectedSet, onExit, onDone
   onExit: () => void;
   onDone: () => void;
 }) {
-  const [cardIdx, setCardIdx]       = useState(0);
-  const [choices, setChoices]       = useState<string[]>([]);
-  const [selected, setSelected]     = useState<string | null>(null);
-  const [wrongSet, setWrongSet]     = useState<Set<string>>(new Set());
-  const [doneSet, setDoneSet]       = useState<Set<number>>(new Set());
-  const [shake, setShake]           = useState(false);
+  const [cardIdx, setCardIdx]   = useState(0);
+  const [phase, setPhase]       = useState<"showing" | "selecting">("showing");
+  const [choices, setChoices]   = useState<string[]>([]);
+  const [wrongSet, setWrongSet] = useState<Set<string>>(new Set());
+  const [doneSet, setDoneSet]   = useState<Set<number>>(new Set());
+  const [shake, setShake]       = useState(false);
 
   const word = batch[cardIdx];
 
-  // 카드 바뀔 때 초기화 + 발음
+  // 카드 바뀔 때: 보기 단계부터 시작, 발음 재생
   useEffect(() => {
     if (!word) return;
-    setSelected(null);
+    setPhase("showing");
     setWrongSet(new Set());
     setShake(false);
-    // 보기 생성: 이 배치의 나머지 + 랜덤 (배치가 작으면 batch 내에서만)
+    setTimeout(() => speak(word.english), 150);
+  }, [cardIdx, batch]);
+
+  // 선택 단계 진입 시 보기 생성
+  useEffect(() => {
+    if (phase !== "selecting" || !word) return;
     const pool = batch.filter(w => w.id !== word.id);
     const distractors = shuffle(pool).slice(0, 3).map(w => w.korean);
     setChoices(shuffle([word.korean, ...distractors]));
-    setTimeout(() => speak(word.english), 150);
-  }, [cardIdx, batch]);
+    setWrongSet(new Set());
+  }, [phase, cardIdx, batch]);
 
   // 처음 마운트 시 리셋
   useEffect(() => {
     setCardIdx(0);
     setDoneSet(new Set());
+    setPhase("showing");
   }, [batch]);
 
   function handleChoice(choice: string) {
-    if (selected === choice) return;           // 이미 선택
-    if (wrongSet.has(choice)) return;          // 이미 틀린 보기
-    if (doneSet.has(cardIdx)) return;          // 이미 맞춘 카드
+    if (wrongSet.has(choice)) return;
+    if (doneSet.has(cardIdx)) return;
 
     if (choice === word.korean) {
-      // 정답
-      setSelected(choice);
       const newDone = new Set(doneSet).add(cardIdx);
       setDoneSet(newDone);
       const isLast = cardIdx === batch.length - 1;
       if (isLast && newDone.size === batch.length) {
-        // 마지막 카드 맞춤 → 잠깐 후 테스트 시작
-        setTimeout(onDone, 900);
+        setTimeout(onDone, 800);
       } else {
-        setTimeout(() => {
-          setCardIdx(i => Math.min(i + 1, batch.length - 1));
-        }, 700);
+        setTimeout(() => setCardIdx(i => Math.min(i + 1, batch.length - 1)), 700);
       }
     } else {
-      // 오답 → 해당 보기 비활성화, 흔들기
       setWrongSet(prev => new Set(prev).add(choice));
       setShake(true);
-      setTimeout(() => setShake(false), 500);
+      setTimeout(() => setShake(false), 450);
     }
   }
 
@@ -503,7 +604,9 @@ function FlashCards({ batch, batchIdx, totalBatches, selectedSet, onExit, onDone
         <button onClick={onExit} className="text-white/60 hover:text-white text-sm">✕</button>
         <div className="flex-1 text-center">
           <p className="text-white/70 text-xs">{selectedSet?.emoji} {selectedSet?.name} · 그룹 {batchIdx + 1}/{totalBatches}</p>
-          <p className="text-white font-bold text-sm">📖 외우기</p>
+          <p className="text-white font-bold text-sm">
+            {phase === "showing" ? "📖 외우기" : "❓ 확인하기"}
+          </p>
         </div>
         <span className="text-white/60 text-sm">{doneSet.size}/{batch.length}</span>
       </div>
@@ -520,59 +623,67 @@ function FlashCards({ batch, batchIdx, totalBatches, selectedSet, onExit, onDone
       </div>
 
       <div className="flex-1 flex flex-col items-center px-5 pt-2 pb-6 gap-5">
-        {/* 단어 카드 */}
-        <div className={`w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8 text-center ${shake ? "animate-shake" : ""}`}>
-          <p className="text-xs text-gray-400 mb-2 font-bold tracking-widest uppercase">English</p>
-          <p className="text-4xl font-extrabold text-gray-800 mb-4">{word.english}</p>
-          <button onClick={() => speak(word.english)}
-            className="w-11 h-11 rounded-full bg-violet-100 hover:bg-violet-200 inline-flex items-center justify-center text-xl transition-all">
-            🔊
-          </button>
-          {isDone && (
-            <p className="mt-3 text-green-500 font-extrabold text-lg animate-bounce">✅ {word.korean}</p>
-          )}
-        </div>
 
-        {/* 보기 */}
-        <div className="w-full max-w-sm grid grid-cols-2 gap-3">
-          {choices.map(choice => {
-            const isCorrectChoice = choice === word.korean;
-            const isWrong  = wrongSet.has(choice);
-            const isPicked = selected === choice;
-
-            let cls = "bg-white/90 text-gray-800 border-2 border-white/30";
-            if (isDone && isCorrectChoice) cls = "bg-green-400 text-white border-2 border-green-300 scale-105";
-            else if (isWrong)             cls = "bg-white/20 text-white/30 border-2 border-white/10 line-through";
-            else if (!isDone)             cls = "bg-white/90 text-gray-800 border-2 border-white/30 hover:bg-white active:scale-95";
-
-            return (
-              <button key={choice}
-                onClick={() => handleChoice(choice)}
-                disabled={isDone || isWrong}
-                className={`rounded-2xl p-4 text-center font-bold text-base transition-all duration-200 shadow-md ${cls}`}>
-                {choice}
+        {/* ── 보기 단계: 영어 + 한국어 함께 표시 ── */}
+        {phase === "showing" && (
+          <>
+            <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8 text-center">
+              <p className="text-xs text-gray-400 mb-2 font-bold tracking-widest uppercase">English</p>
+              <p className="text-4xl font-extrabold text-gray-800">{word.english}</p>
+              <div className="my-4 border-t border-gray-100" />
+              <p className="text-xs text-gray-400 mb-1 font-bold tracking-widest uppercase">한국어</p>
+              <p className="text-2xl font-extrabold text-violet-600">{word.korean}</p>
+              <button onClick={() => speak(word.english)}
+                className="mt-5 w-11 h-11 rounded-full bg-violet-100 hover:bg-violet-200 inline-flex items-center justify-center text-xl transition-all">
+                🔊
               </button>
-            );
-          })}
-        </div>
-
-        {/* 힌트 */}
-        {!isDone && wrongSet.size === 0 && (
-          <p className="text-white/50 text-sm">뜻을 골라보세요!</p>
+            </div>
+            <button onClick={() => setPhase("selecting")}
+              className="w-full max-w-sm py-4 rounded-2xl bg-white text-violet-600 font-extrabold text-lg shadow-lg active:scale-95 transition-all">
+              알겠어요! 확인해볼게요 →
+            </button>
+            <p className="text-white/40 text-sm">단어를 잘 기억하고 버튼을 눌러보세요</p>
+          </>
         )}
-        {!isDone && wrongSet.size > 0 && (
-          <p className="text-yellow-300 text-sm font-bold">다시 골라보세요 💪</p>
+
+        {/* ── 선택 단계: 영어만 보이고 한국어 4지선다 ── */}
+        {phase === "selecting" && (
+          <>
+            <div className={`w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8 text-center ${shake ? "animate-shake" : ""}`}>
+              <p className="text-xs text-gray-400 mb-2 font-bold tracking-widest uppercase">English</p>
+              <p className="text-4xl font-extrabold text-gray-800 mb-3">{word.english}</p>
+              <button onClick={() => speak(word.english)}
+                className="w-10 h-10 rounded-full bg-violet-100 hover:bg-violet-200 inline-flex items-center justify-center text-lg transition-all">
+                🔊
+              </button>
+              {isDone && <p className="mt-3 text-green-500 font-extrabold text-lg">✅ {word.korean}</p>}
+            </div>
+
+            <div className="w-full max-w-sm grid grid-cols-2 gap-3">
+              {choices.map(choice => {
+                const isCorrectChoice = choice === word.korean;
+                const isWrong = wrongSet.has(choice);
+                let cls = "bg-white/90 text-gray-800 border-2 border-white/30 hover:bg-white active:scale-95";
+                if (isDone && isCorrectChoice) cls = "bg-green-400 text-white border-2 border-green-300 scale-105";
+                else if (isWrong)             cls = "bg-white/20 text-white/30 border-2 border-white/10 line-through";
+                return (
+                  <button key={choice} onClick={() => handleChoice(choice)}
+                    disabled={isDone || isWrong}
+                    className={`rounded-2xl p-4 text-center font-bold text-base transition-all duration-200 shadow-md ${cls}`}>
+                    {choice}
+                  </button>
+                );
+              })}
+            </div>
+
+            {!isDone && wrongSet.size === 0 && <p className="text-white/50 text-sm">한국어 뜻을 골라보세요!</p>}
+            {!isDone && wrongSet.size > 0  && <p className="text-yellow-300 text-sm font-bold">다시 골라보세요 💪</p>}
+          </>
         )}
       </div>
 
       <style>{`
-        @keyframes shake {
-          0%,100% { transform: translateX(0); }
-          20%      { transform: translateX(-8px); }
-          40%      { transform: translateX(8px); }
-          60%      { transform: translateX(-6px); }
-          80%      { transform: translateX(6px); }
-        }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
         .animate-shake { animation: shake 0.45s ease; }
       `}</style>
     </div>
