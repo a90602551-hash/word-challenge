@@ -2,29 +2,32 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+// voices 미리 캐싱
+let cachedVoice: SpeechSynthesisVoice | null = null;
+
+function preloadVoices() {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+  const pick = () => {
+    const voices = window.speechSynthesis.getVoices();
+    cachedVoice = voices.find(v => v.lang.startsWith("en-US"))
+               || voices.find(v => v.lang.startsWith("en"))
+               || voices[0]
+               || null;
+  };
+  pick();
+  window.speechSynthesis.addEventListener("voiceschanged", pick);
+}
+
 function speak(text: string) {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
   const synth = window.speechSynthesis;
   synth.cancel();
-
   const utt = new SpeechSynthesisUtterance(text);
   utt.lang = "en-US";
   utt.rate = 0.85;
-
-  const doSpeak = () => {
-    const voices = synth.getVoices();
-    const voice = voices.find(v => v.lang.startsWith("en-US"))
-               || voices.find(v => v.lang.startsWith("en"));
-    if (voice) utt.voice = voice;
-    synth.speak(utt);
-  };
-
-  if (synth.getVoices().length > 0) {
-    doSpeak();
-  } else {
-    synth.addEventListener("voiceschanged", doSpeak, { once: true });
-    setTimeout(doSpeak, 300);
-  }
+  utt.volume = 1;
+  if (cachedVoice) utt.voice = cachedVoice;
+  synth.speak(utt);
 }
 
 interface WordSet { id: number; name: string; emoji: string; description: string; _count: { words: number }; }
@@ -113,6 +116,8 @@ function ChallengePageInner() {
   const [copyOk, setCopyOk]           = useState<boolean | null>(null);
   const inputRef     = useRef<HTMLInputElement>(null);
   const copyInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { preloadVoices(); }, []);
 
   useEffect(() => {
     fetch("/api/auth/me")
