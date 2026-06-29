@@ -48,6 +48,8 @@ export default function MainPage() {
     if (!res.ok) {
       if (data.error === "pending") {
         setError("⏳ 선생님 승인 대기 중이에요! 곧 이용할 수 있어요 😊");
+      } else if (data.error === "expired") {
+        setError("⛔ 30일 무료 체험이 종료되었어요. 선생님께 문의해주세요!");
       } else {
         setError(data.error);
       }

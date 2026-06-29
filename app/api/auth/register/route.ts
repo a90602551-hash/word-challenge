@@ -29,6 +29,7 @@ export async function POST(req: Request) {
         isEnrolled: isEnrolled !== false,
         parentName: isEnrolled === false ? (parentName?.trim() || null) : null,
         parentPhone: isEnrolled === false ? (parentPhone?.trim() || null) : null,
+        expiresAt: isEnrolled === false ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null,
       },
     });
 

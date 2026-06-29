@@ -27,6 +27,7 @@ model Student {
   isEnrolled      Boolean          @default(true)
   parentName      String?
   parentPhone     String?
+  expiresAt       DateTime?
   challengeScores   ChallengeScore[]
   learningProgress  LearningProgress[]
   createdAt       DateTime         @default(now())

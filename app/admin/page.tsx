@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
 
-interface Student  { id: number; name: string; username: string; avatar: string; approved: boolean; isEnrolled: boolean; parentName?: string; parentPhone?: string; createdAt: string; }
+interface Student  { id: number; name: string; username: string; avatar: string; approved: boolean; isEnrolled: boolean; parentName?: string; parentPhone?: string; createdAt: string; expiresAt?: string; }
 interface WordSet   { id: number; name: string; emoji: string; description: string; _count: { words: number }; }
 interface Word      { id: number; english: string; korean: string; }
 interface ScoreRow  { id: number; studentId: number; wordSetId: number | null; score: number; totalQuestions: number; createdAt: string; }
@@ -44,6 +44,25 @@ export default function AdminPage() {
   // 비밀번호 변경
   const [pwStudentId, setPwStudentId] = useState<number | null>(null);
   const [newPw, setNewPw]             = useState("");
+
+  async function extendStudent(id: number, days: number) {
+    await fetch(`/api/students/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ extendDays: days }),
+    });
+    loadStudents();
+  }
+
+  function expiryLabel(s: Student) {
+    if (!s.expiresAt) return null;
+    const exp = new Date(s.expiresAt);
+    const now = new Date();
+    const diff = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (diff < 0) return { text: "만료됨", color: "#E8463A", bg: "#FFF0EE" };
+    if (diff <= 7) return { text: `D-${diff}`, color: "#F6A800", bg: "#FFFBEE" };
+    return { text: `D-${diff}`, color: "#76C043", bg: "#F0FBE8" };
+  }
 
   useEffect(() => {
     fetch("/api/teacher/me").then(r => { if (!r.ok) router.push("/admin/login"); }).catch(() => router.push("/admin/login"));
@@ -329,18 +348,30 @@ export default function AdminPage() {
                         </div>
                         <p style={{ fontSize: "11px", color: "#AAAAAA" }}>@{s.username}</p>
                       </div>
-                      {pwStudentId === s.id ? (
-                        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                          <input value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="새 비밀번호" style={{ ...inputStyle, width: "120px", fontSize: "12px" }} />
-                          <button onClick={() => changePassword(s.id)} style={{ ...btnPrimary, padding: "7px 12px", fontSize: "12px" }}>변경</button>
-                          <button onClick={() => setPwStudentId(null)} style={{ fontSize: "12px", color: "#AAAAAA", background: "none", border: "none", cursor: "pointer" }}>취소</button>
-                        </div>
-                      ) : (
-                        <div style={{ display: "flex", gap: "10px" }}>
-                          <button onClick={() => { setPwStudentId(s.id); setNewPw(""); }} style={{ fontSize: "11px", color: "#4466CC", background: "none", border: "none", cursor: "pointer" }}>비밀번호 변경</button>
-                          <button onClick={() => deleteStudent(s.id)} style={{ fontSize: "11px", color: "#E8463A", background: "none", border: "none", cursor: "pointer" }}>삭제</button>
-                        </div>
-                      )}
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "5px" }}>
+                        {/* 만료일 뱃지 (비재원생만) */}
+                        {!s.isEnrolled && (() => {
+                          const lbl = expiryLabel(s);
+                          return lbl ? (
+                            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                              <span style={{ fontSize: "10px", background: lbl.bg, color: lbl.color, borderRadius: "999px", padding: "2px 8px", fontWeight: 800 }}>{lbl.text}</span>
+                              <button onClick={() => extendStudent(s.id, 30)} style={{ fontSize: "10px", color: "#4466CC", background: "none", border: "none", cursor: "pointer", fontWeight: 700 }}>+30일</button>
+                            </div>
+                          ) : null;
+                        })()}
+                        {pwStudentId === s.id ? (
+                          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                            <input value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="새 비밀번호" style={{ ...inputStyle, width: "120px", fontSize: "12px" }} />
+                            <button onClick={() => changePassword(s.id)} style={{ ...btnPrimary, padding: "7px 12px", fontSize: "12px" }}>변경</button>
+                            <button onClick={() => setPwStudentId(null)} style={{ fontSize: "12px", color: "#AAAAAA", background: "none", border: "none", cursor: "pointer" }}>취소</button>
+                          </div>
+                        ) : (
+                          <div style={{ display: "flex", gap: "10px" }}>
+                            <button onClick={() => { setPwStudentId(s.id); setNewPw(""); }} style={{ fontSize: "11px", color: "#4466CC", background: "none", border: "none", cursor: "pointer" }}>비밀번호 변경</button>
+                            <button onClick={() => deleteStudent(s.id)} style={{ fontSize: "11px", color: "#E8463A", background: "none", border: "none", cursor: "pointer" }}>삭제</button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
