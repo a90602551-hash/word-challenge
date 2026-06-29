@@ -53,7 +53,7 @@ export default function MainPage() {
     const data = await res.json();
     setLoading(false);
     if (!res.ok) { setError(data.error); return; }
-    router.push("/challenge");
+    router.push("/placement");
   }
 
   const currentRanking = rankings[gradeTab];

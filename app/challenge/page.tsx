@@ -63,11 +63,16 @@ export default function ChallengePage() {
   const copyInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch("/api/auth/me").then(r => { if (!r.ok) router.push("/"); }).catch(() => router.push("/"));
-    // 첫 방문자면 레벨 테스트로 이동
-    fetch("/api/challenge/score/me").then(r => r.json()).then(d => {
-      if (d.isFirst) router.push("/placement");
-    }).catch(() => {});
+    fetch("/api/auth/me")
+      .then(r => {
+        if (!r.ok) { router.push("/"); return; }
+        // 첫 방문자면 레벨 테스트로 이동
+        return fetch("/api/challenge/score/me")
+          .then(r2 => r2.json())
+          .then(d => { if (d?.isFirst) router.push("/placement"); })
+          .catch(() => {});
+      })
+      .catch(() => router.push("/"));
     fetch("/api/wordsets").then(r => r.json()).then((sets: WordSet[]) => {
       setWordSets(sets);
       // 배치 테스트에서 추천 학년으로 왔으면 자동 선택
