@@ -362,7 +362,7 @@ function ChallengePageInner() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-emerald-500 to-teal-600 flex flex-col">
         <div className="px-4 py-4 flex items-center gap-3">
-          <button onClick={() => setScreen("study")} className="text-white/60 hover:text-white text-sm">← 외우기</button>
+          <div className="w-6" />
           <div className="flex-1 text-center">
             <p className="text-white/70 text-xs">그룹 {batchIdx + 1}/{totalBatches} · 따라쓰기</p>
             <p className="text-white font-bold text-sm">⌨️ 보고 따라쓰기 {copyRound}/{COPY_ROUNDS}회</p>
@@ -556,7 +556,7 @@ function ChallengePageInner() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* 상단 */}
       <div className="bg-white px-4 py-3 shadow-sm flex items-center gap-3">
-        <button onClick={() => setScreen("study")} className="text-gray-400 text-sm">← 외우기</button>
+        <div className="w-6" />
         <div className="flex-1 text-center">
           <p className="text-xs text-gray-400">그룹 {batchIdx + 1}/{totalBatches} · 테스트 {stepNum}/3</p>
           <p className="text-sm font-bold text-gray-700">{stepLabel}</p>
@@ -716,7 +716,7 @@ function FlashCards({ batch, batchIdx, totalBatches, selectedSet, onExit, onDone
     <div className="min-h-screen bg-gradient-to-b from-violet-600 to-indigo-700 flex flex-col">
       {/* 상단 */}
       <div className="px-4 py-4 flex items-center gap-3">
-        <button onClick={onExit} className="text-white/60 hover:text-white text-sm">✕</button>
+        <div className="w-6" />
         <div className="flex-1 text-center">
           <p className="text-white/70 text-xs">{selectedSet?.emoji} {selectedSet?.name} · 그룹 {batchIdx + 1}/{totalBatches}</p>
           <p className="text-white font-bold text-sm">
