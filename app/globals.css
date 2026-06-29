@@ -39,11 +39,28 @@ body {
   gap: 20px;
   align-items: start;
 }
+.main-login-col { order: 2; }
+.main-rank-col  { order: 1; }
+
 @media (max-width: 768px) {
   .main-grid {
     grid-template-columns: 1fr;
   }
-  .main-header-logo {
-    height: 64px !important;
+  .main-login-col { order: 1; }
+  .main-rank-col  { order: 2; }
+  .main-header {
+    flex-wrap: wrap;
+    gap: 8px !important;
+    margin-bottom: 16px !important;
+  }
+  .main-header-title {
+    font-size: 18px !important;
+  }
+  .main-header-sub {
+    font-size: 10px !important;
+  }
+  .main-divider { display: none; }
+  .main-teacher-btn {
+    font-size: 11px !important;
   }
 }

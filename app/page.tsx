@@ -80,16 +80,16 @@ export default function MainPage() {
       <div className="max-w-6xl mx-auto px-8 py-8">
 
         {/* 헤더 */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-5">
-            <img src="/TheFluent/logo.clear.png" alt="The Fluent" style={{ height: "110px", objectFit: "contain" }} />
-            <div style={{ width: "1px", height: "40px", background: "#E0D8C0" }} />
+        <div className="main-header flex items-center justify-between mb-8" style={{ gap: "20px" }}>
+          <div className="flex items-center" style={{ gap: "16px" }}>
+            <img src="/TheFluent/logo.clear.png" alt="The Fluent" style={{ height: "80px", objectFit: "contain", flexShrink: 0 }} />
+            <div className="main-divider" style={{ width: "1px", height: "40px", background: "#E0D8C0" }} />
             <div>
-              <h1 className="text-2xl font-black" style={{ color: "#1F2A44", lineHeight: 1.1 }}>단어 챌린지</h1>
-              <p className="text-xs font-bold mt-0.5" style={{ color: "#76C043", letterSpacing: "1px" }}>영어 단어 왕은 누구?! 🏆</p>
+              <h1 className="main-header-title font-black" style={{ color: "#1F2A44", lineHeight: 1.1, fontSize: "24px" }}>단어 챌린지</h1>
+              <p className="main-header-sub font-bold mt-0.5" style={{ color: "#76C043", letterSpacing: "1px", fontSize: "12px" }}>영어 단어 왕은 누구?! 🏆</p>
             </div>
           </div>
-          <button onClick={() => router.push("/admin/login")} className="text-xs transition-all" style={{ color: "#C0C8D8" }}>
+          <button onClick={() => router.push("/admin/login")} className="main-teacher-btn text-xs transition-all" style={{ color: "#C0C8D8", whiteSpace: "nowrap" }}>
             선생님 로그인
           </button>
         </div>
@@ -98,7 +98,7 @@ export default function MainPage() {
         <div className="main-grid">
 
           {/* 왼쪽: 순위판 */}
-          <div className="rounded-3xl p-6 bg-white" style={{ border: "1.5px solid #F0E8C8", boxShadow: "0 2px 12px rgba(246,226,127,0.2)" }}>
+          <div className="main-rank-col rounded-3xl p-6 bg-white" style={{ border: "1.5px solid #F0E8C8", boxShadow: "0 2px 12px rgba(246,226,127,0.2)" }}>
             <h2 className="font-black text-sm mb-4" style={{ color: "#1F2A44" }}>🏆 학년별 순위</h2>
 
             {/* 학년 탭 */}
@@ -226,7 +226,7 @@ export default function MainPage() {
           </div>
 
           {/* 오른쪽: 로그인/회원가입 */}
-          <div className="rounded-3xl p-7 bg-white" style={{ border: "1.5px solid #F0E8C8", boxShadow: "0 2px 12px rgba(246,226,127,0.2)" }}>
+          <div className="main-login-col rounded-3xl p-7 bg-white" style={{ border: "1.5px solid #F0E8C8", boxShadow: "0 2px 12px rgba(246,226,127,0.2)" }}>
             <div className="grid grid-cols-2 gap-2 mb-6">
               <button onClick={() => { setMode("login"); setError(""); }}
                 className="py-3 rounded-2xl font-extrabold text-sm transition-all"
