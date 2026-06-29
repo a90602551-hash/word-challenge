@@ -112,7 +112,8 @@ export default function MainPage() {
                       : { background: "#ECEADE" }) }}>
                   <img src="/TheFluent/logo.symbol.png" alt=""
                     style={{ position: "absolute", width: "52px", height: "52px", objectFit: "contain",
-                      bottom: "-6px", right: "-6px", opacity: gradeTab === i ? 0.55 : 0.28 }} />
+                      bottom: "-6px", right: "-6px", opacity: gradeTab === i ? 0.7 : 0.5,
+                      mixBlendMode: gradeTab === i ? "screen" : "multiply" }} />
                   <div style={{ position: "relative", zIndex: 1, lineHeight: 1 }}>
                     <div style={{ fontSize: "20px", fontWeight: 900, color: gradeTab === i ? "#F6E27F" : "#888888" }}>{r.name.replace("학년", "")}</div>
                     <div style={{ fontSize: "9px", fontWeight: 800, marginTop: "2px", color: gradeTab === i ? "rgba(246,226,127,0.7)" : "#AAAAAA" }}>학년</div>
