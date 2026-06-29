@@ -10,6 +10,8 @@ interface GradeRanking {
   wordSetId: number; name: string; emoji: string;
   volumeTop3: { rank: number; student: RankStudent; sessions: number; }[];
   scoreTop3:  { rank: number; student: RankStudent; avgAccuracy: number; }[];
+  myVolume: { rank: number; sessions: number; gapToAbove: number } | null;
+  myScore:  { rank: number; avgAccuracy: number; gapToAbove: number } | null;
 }
 
 export default function MainPage() {
@@ -26,9 +28,11 @@ export default function MainPage() {
   const [loading, setLoading]   = useState(false);
   const [rankings, setRankings] = useState<GradeRanking[]>([]);
   const [gradeTab, setGradeTab] = useState(0);
+  const [myName, setMyName]     = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/rankings").then(r => r.json()).then(d => setRankings(d.rankings || [])).catch(() => {});
+    fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(d => { if (d?.name) setMyName(d.name); }).catch(() => {});
   }, []);
 
   async function handleLogin(e: React.FormEvent) {
@@ -176,6 +180,35 @@ export default function MainPage() {
                     );
                   })()}
                 </div>
+
+                {/* 내 순위 */}
+                {myName && currentRanking && (currentRanking.myVolume || currentRanking.myScore) && (
+                  <div className="border-t border-white/10 pt-3 space-y-2">
+                    <p className="text-xs font-extrabold text-purple-200">🙋 내 순위</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {currentRanking.myVolume && (
+                        <div className="bg-white/10 rounded-xl px-3 py-2">
+                          <p className="text-[10px] text-purple-300 mb-0.5">⚡ 학습량</p>
+                          <p className="text-white font-extrabold text-sm">{currentRanking.myVolume.rank}위 <span className="text-yellow-300">{currentRanking.myVolume.sessions}회</span></p>
+                          {currentRanking.myVolume.rank > 1 && (
+                            <p className="text-[10px] text-purple-300 mt-0.5">윗 순위까지 <span className="text-yellow-200 font-bold">{currentRanking.myVolume.gapToAbove}회</span> 차이</p>
+                          )}
+                          {currentRanking.myVolume.rank === 1 && <p className="text-[10px] text-yellow-300 mt-0.5">🏆 1위!</p>}
+                        </div>
+                      )}
+                      {currentRanking.myScore && (
+                        <div className="bg-white/10 rounded-xl px-3 py-2">
+                          <p className="text-[10px] text-purple-300 mb-0.5">⭐ 성적</p>
+                          <p className="text-white font-extrabold text-sm">{currentRanking.myScore.rank}위 <span className="text-yellow-300">{currentRanking.myScore.avgAccuracy}%</span></p>
+                          {currentRanking.myScore.rank > 1 && (
+                            <p className="text-[10px] text-purple-300 mt-0.5">윗 순위까지 <span className="text-yellow-200 font-bold">{currentRanking.myScore.gapToAbove}%</span> 차이</p>
+                          )}
+                          {currentRanking.myScore.rank === 1 && <p className="text-[10px] text-yellow-300 mt-0.5">🏆 1위!</p>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
