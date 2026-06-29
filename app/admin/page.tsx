@@ -197,30 +197,40 @@ export default function AdminPage() {
     router.push("/admin/login");
   }
 
+  const cardStyle = { background: "#fff", border: "1.5px solid #F0E8C8", borderRadius: "16px" };
+  const inputStyle = { border: "1.5px solid #E8E0C8", borderRadius: "10px", padding: "8px 12px", fontSize: "13px", outline: "none", background: "#fff" };
+  const btnPrimary = { background: "#1F2A44", color: "#F6E27F", borderRadius: "10px", padding: "9px 16px", fontWeight: 900, fontSize: "13px", cursor: "pointer", border: "none" };
+  const btnGreen   = { background: "#76C043", color: "#fff", borderRadius: "10px", padding: "9px 16px", fontWeight: 900, fontSize: "12px", cursor: "pointer", border: "none" };
+  const btnRed     = { background: "#FFF0EE", color: "#E8463A", borderRadius: "10px", padding: "9px 16px", fontWeight: 900, fontSize: "12px", cursor: "pointer", border: "1.5px solid #F0C0BC" };
+
+  const TAB_LABELS: Record<Tab, string> = { pending: "⏳ 승인 대기", students: "👥 학생 관리", words: "📚 단어장 관리", results: "📊 학습 결과" };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 헤더 */}
-      <div className="bg-slate-800 text-white px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">👨‍🏫</span>
-          <h1 className="text-xl font-extrabold">단어 챌린지 관리</h1>
+    <div className="min-h-screen" style={{ background: "#FFF9E6" }}>
+      {/* 남색 헤더 */}
+      <div style={{ background: "#1F2A44", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <img src="/TheFluent/logo.clear.png" alt="The Fluent" style={{ height: "32px", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+          <div style={{ width: "1px", height: "22px", background: "rgba(255,255,255,0.15)" }} />
+          <span style={{ fontSize: "14px", fontWeight: 900, color: "#F6E27F" }}>선생님 관리페이지</span>
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/")} className="text-slate-300 hover:text-white text-sm">학생 홈 보기</button>
-          <button onClick={handleLogout} className="text-slate-400 hover:text-white text-sm">로그아웃</button>
+        <div style={{ display: "flex", gap: "14px" }}>
+          <button onClick={() => router.push("/")} style={{ fontSize: "12px", color: "rgba(255,255,255,0.45)", background: "none", border: "none", cursor: "pointer" }}>학생 홈 보기</button>
+          <button onClick={handleLogout} style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", background: "none", border: "none", cursor: "pointer" }}>로그아웃</button>
         </div>
       </div>
 
       {/* 탭 */}
-      <div className="flex border-b bg-white px-6 gap-6">
+      <div style={{ background: "#1F2A44", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", padding: "0 24px", gap: "2px" }}>
         {(["pending", "students", "words", "results"] as Tab[]).map(t => {
           const pendingCount = students.filter(s => !s.approved).length;
+          const active = tab === t;
           return (
             <button key={t} onClick={() => { setTab(t); if (t === "results") loadResults(); }}
-              className={`py-3 font-bold text-sm transition-all border-b-2 relative ${tab === t ? "border-slate-700 text-slate-800" : "border-transparent text-gray-400"}`}>
-              {t === "pending" ? "⏳ 승인 대기" : t === "students" ? "👥 학생 관리" : t === "words" ? "📚 단어장 관리" : "📊 학습 결과"}
+              style={{ padding: "12px 16px", fontSize: "12px", fontWeight: active ? 900 : 700, color: active ? "#F6E27F" : "rgba(255,255,255,0.4)", background: "none", border: "none", borderBottom: active ? "2px solid #F6E27F" : "2px solid transparent", cursor: "pointer", position: "relative" }}>
+              {TAB_LABELS[t]}
               {t === "pending" && pendingCount > 0 && (
-                <span className="ml-1.5 bg-red-500 text-white text-xs font-extrabold px-1.5 py-0.5 rounded-full">{pendingCount}</span>
+                <span style={{ marginLeft: "5px", background: "#E8463A", color: "#fff", fontSize: "10px", fontWeight: 900, padding: "1px 5px", borderRadius: "999px" }}>{pendingCount}</span>
               )}
             </button>
           );
@@ -228,115 +238,107 @@ export default function AdminPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6">
+
         {/* ── 승인 대기 ── */}
         {tab === "pending" && (
-          <div className="space-y-4">
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div className="px-5 py-4 border-b flex items-center justify-between">
-                <h2 className="font-extrabold text-gray-800">⏳ 가입 승인 대기</h2>
-                <span className="text-sm text-gray-400">승인해야 학생이 앱을 이용할 수 있어요</span>
-              </div>
-              {students.filter(s => !s.approved).length === 0 ? (
-                <div className="text-center py-12 text-gray-400">
-                  <div className="text-4xl mb-2">✅</div>
-                  <p>대기 중인 학생이 없어요!</p>
-                </div>
-              ) : (
-                <div className="divide-y">
-                  {students.filter(s => !s.approved).map(s => (
-                    <div key={s.id} className="px-5 py-4 flex items-center gap-3">
-                      <span className="text-2xl">{s.avatar}</span>
-                      <div className="flex-1">
-                        <p className="font-bold text-gray-800">{s.name}</p>
-                        <p className="text-xs text-gray-400">아이디: {s.username} · {s.isEnrolled ? "🏫 재원생" : "🏠 비재원생"} · 가입일: {new Date(s.createdAt).toLocaleDateString("ko-KR")}</p>
-                        {!s.isEnrolled && s.parentName && (
-                          <p className="text-xs text-indigo-500 font-bold mt-0.5">👨‍👩‍👧 {s.parentName} · 📱 {s.parentPhone}</p>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => approveStudent(s.id, true)}
-                          className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-emerald-600">
-                          ✅ 승인
-                        </button>
-                        <button onClick={() => deleteStudent(s.id)}
-                          className="bg-red-100 text-red-500 px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-200">
-                          ❌ 거절
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+          <div style={cardStyle} className="overflow-hidden">
+            <div style={{ padding: "14px 20px", borderBottom: "1px solid #F0E8C8", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontWeight: 900, color: "#1F2A44", fontSize: "14px" }}>⏳ 가입 승인 대기</span>
+              <span style={{ fontSize: "11px", color: "#AAAAAA" }}>승인해야 학생이 앱을 이용할 수 있어요</span>
             </div>
+            {students.filter(s => !s.approved).length === 0 ? (
+              <div className="text-center py-12" style={{ color: "#AAAAAA" }}>
+                <div className="text-4xl mb-2">✅</div>
+                <p>대기 중인 학생이 없어요!</p>
+              </div>
+            ) : (
+              <div>
+                {students.filter(s => !s.approved).map(s => (
+                  <div key={s.id} style={{ padding: "14px 20px", borderBottom: "1px solid #F8F4EC", display: "flex", alignItems: "center", gap: "12px" }}>
+                    <span style={{ fontSize: "24px" }}>{s.avatar}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "3px" }}>
+                        <span style={{ fontWeight: 900, color: "#1F2A44", fontSize: "14px" }}>{s.name}</span>
+                        <span style={{ fontSize: "9px", background: s.isEnrolled ? "#FFFBEE" : "#F0F4FF", color: s.isEnrolled ? "#C8A800" : "#4466CC", borderRadius: "999px", padding: "1px 7px", fontWeight: 800 }}>
+                          {s.isEnrolled ? "재원" : "비재원"}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: "11px", color: "#AAAAAA" }}>@{s.username} · {new Date(s.createdAt).toLocaleDateString("ko-KR")}</p>
+                      {!s.isEnrolled && s.parentName && (
+                        <p style={{ fontSize: "11px", color: "#76C043", fontWeight: 700, marginTop: "2px" }}>👪 {s.parentName} · {s.parentPhone}</p>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button onClick={() => approveStudent(s.id, true)} style={btnGreen}>✅ 승인</button>
+                      <button onClick={() => deleteStudent(s.id)} style={btnRed}>❌ 거절</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* ── 학생 관리 ── */}
         {tab === "students" && (
-          <div className="space-y-6">
-            {/* 학생 추가 폼 */}
-            <div className="bg-white rounded-2xl shadow-sm p-5">
-              <h2 className="font-extrabold text-gray-800 mb-4">➕ 학생 추가</h2>
-              <form onSubmit={addStudent} className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <input value={sName} onChange={e => setSName(e.target.value)} placeholder="이름" required
-                  className="border rounded-xl px-3 py-2 text-sm outline-none focus:border-slate-400" />
-                <input value={sUsername} onChange={e => setSUsername(e.target.value)} placeholder="아이디" required
-                  className="border rounded-xl px-3 py-2 text-sm outline-none focus:border-slate-400" />
-                <input value={sPassword} onChange={e => setSPassword(e.target.value)} placeholder="비밀번호" required
-                  className="border rounded-xl px-3 py-2 text-sm outline-none focus:border-slate-400" />
-                <div className="flex gap-2">
-                  <select value={sAvatar} onChange={e => setSAvatar(e.target.value)}
-                    className="border rounded-xl px-2 py-2 text-lg outline-none focus:border-slate-400">
+          <div className="space-y-4">
+            <div style={{ ...cardStyle, padding: "18px 20px" }}>
+              <div style={{ fontWeight: 900, color: "#1F2A44", fontSize: "13px", marginBottom: "12px" }}>➕ 학생 직접 추가</div>
+              <form onSubmit={addStudent} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: "8px" }}>
+                <input value={sName} onChange={e => setSName(e.target.value)} placeholder="이름" required style={inputStyle} />
+                <input value={sUsername} onChange={e => setSUsername(e.target.value)} placeholder="아이디" required style={inputStyle} />
+                <input value={sPassword} onChange={e => setSPassword(e.target.value)} placeholder="비밀번호" required style={inputStyle} />
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <select value={sAvatar} onChange={e => setSAvatar(e.target.value)} style={{ ...inputStyle, width: "48px", textAlign: "center", padding: "8px 6px" }}>
                     {AVATARS.map(a => <option key={a} value={a}>{a}</option>)}
                   </select>
-                  <button type="submit" className="flex-1 bg-slate-700 text-white rounded-xl font-bold text-sm hover:bg-slate-800">추가</button>
+                  <button type="submit" style={btnPrimary}>추가</button>
                 </div>
               </form>
-              {sError && <p className="text-red-500 text-sm mt-2">{sError}</p>}
+              {sError && <p style={{ color: "#E8463A", fontSize: "12px", marginTop: "8px" }}>{sError}</p>}
             </div>
 
-            {/* 엑셀 일괄 등록 */}
-            <div className="bg-white rounded-2xl shadow-sm p-5">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="font-extrabold text-gray-800">📊 엑셀로 일괄 등록</h2>
-                <button onClick={downloadTemplate} className="text-sm text-blue-600 hover:underline">템플릿 다운로드</button>
+            <div style={{ ...cardStyle, padding: "18px 20px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+                <span style={{ fontWeight: 900, color: "#1F2A44", fontSize: "13px" }}>📊 엑셀로 일괄 등록</span>
+                <button onClick={downloadTemplate} style={{ fontSize: "11px", color: "#76C043", background: "none", border: "none", cursor: "pointer", fontWeight: 700 }}>템플릿 다운로드</button>
               </div>
-              <p className="text-xs text-gray-400 mb-3">열 이름: 이름, 아이디, 비밀번호, 아바타(선택)</p>
+              <p style={{ fontSize: "11px", color: "#AAAAAA", marginBottom: "10px" }}>열 이름: 이름, 아이디, 비밀번호, 아바타(선택)</p>
               <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleExcelUpload}
                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-slate-100 file:text-slate-700 file:font-bold hover:file:bg-slate-200 cursor-pointer" />
             </div>
 
-            {/* 학생 목록 */}
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div className="px-5 py-3 border-b">
-                <h2 className="font-extrabold text-gray-800">👥 학생 목록 ({students.length}명)</h2>
+            <div style={{ ...cardStyle, overflow: "hidden" }}>
+              <div style={{ padding: "12px 20px", borderBottom: "1px solid #F0E8C8", fontWeight: 900, color: "#1F2A44", fontSize: "13px" }}>
+                👥 학생 목록 ({students.length}명)
               </div>
               {students.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">아직 학생이 없어요</div>
+                <div className="text-center py-10" style={{ color: "#AAAAAA" }}>아직 학생이 없어요</div>
               ) : (
-                <div className="divide-y">
+                <div>
                   {students.map(s => (
-                    <div key={s.id} className="px-5 py-3 flex items-center gap-3">
-                      <span className="text-2xl">{s.avatar}</span>
-                      <div className="flex-1">
-                        <p className="font-bold text-gray-800">{s.name}
-                          <span className="ml-2 text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{s.isEnrolled ? "🏫 재원" : "🏠 비재원"}</span>
-                          {!s.approved && <span className="ml-1 text-xs bg-amber-100 text-amber-600 font-bold px-2 py-0.5 rounded-full">미승인</span>}
-                        </p>
-                        <p className="text-xs text-gray-400">아이디: {s.username}</p>
+                    <div key={s.id} style={{ padding: "12px 20px", borderBottom: "1px solid #F8F4EC", display: "flex", alignItems: "center", gap: "10px" }}>
+                      <span style={{ fontSize: "22px" }}>{s.avatar}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span style={{ fontWeight: 800, color: "#1F2A44", fontSize: "13px" }}>{s.name}</span>
+                          <span style={{ fontSize: "9px", background: s.isEnrolled ? "#FFFBEE" : "#F0F4FF", color: s.isEnrolled ? "#C8A800" : "#4466CC", borderRadius: "999px", padding: "1px 6px", fontWeight: 800 }}>
+                            {s.isEnrolled ? "재원" : "비재원"}
+                          </span>
+                          {!s.approved && <span style={{ fontSize: "9px", background: "#FFF0EE", color: "#E8463A", borderRadius: "999px", padding: "1px 6px", fontWeight: 800 }}>미승인</span>}
+                        </div>
+                        <p style={{ fontSize: "11px", color: "#AAAAAA" }}>@{s.username}</p>
                       </div>
                       {pwStudentId === s.id ? (
-                        <div className="flex gap-2 items-center">
-                          <input value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="새 비밀번호"
-                            className="border rounded-lg px-3 py-1.5 text-sm outline-none w-32" />
-                          <button onClick={() => changePassword(s.id)} className="bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold">변경</button>
-                          <button onClick={() => setPwStudentId(null)} className="text-gray-400 text-sm">취소</button>
+                        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                          <input value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="새 비밀번호" style={{ ...inputStyle, width: "120px", fontSize: "12px" }} />
+                          <button onClick={() => changePassword(s.id)} style={{ ...btnPrimary, padding: "7px 12px", fontSize: "12px" }}>변경</button>
+                          <button onClick={() => setPwStudentId(null)} style={{ fontSize: "12px", color: "#AAAAAA", background: "none", border: "none", cursor: "pointer" }}>취소</button>
                         </div>
                       ) : (
-                        <div className="flex gap-2">
-                          <button onClick={() => { setPwStudentId(s.id); setNewPw(""); }}
-                            className="text-xs text-blue-500 hover:underline">비밀번호 변경</button>
-                          <button onClick={() => deleteStudent(s.id)} className="text-xs text-red-400 hover:underline">삭제</button>
+                        <div style={{ display: "flex", gap: "10px" }}>
+                          <button onClick={() => { setPwStudentId(s.id); setNewPw(""); }} style={{ fontSize: "11px", color: "#4466CC", background: "none", border: "none", cursor: "pointer" }}>비밀번호 변경</button>
+                          <button onClick={() => deleteStudent(s.id)} style={{ fontSize: "11px", color: "#E8463A", background: "none", border: "none", cursor: "pointer" }}>삭제</button>
                         </div>
                       )}
                     </div>
@@ -349,42 +351,34 @@ export default function AdminPage() {
 
         {/* ── 단어장 관리 ── */}
         {tab === "words" && (
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* 왼쪽: 단어장 목록 */}
+          <div className="grid md:grid-cols-2 gap-5">
             <div className="space-y-4">
-              {/* 단어장 추가 */}
-              <div className="bg-white rounded-2xl shadow-sm p-5">
-                <h2 className="font-extrabold text-gray-800 mb-3">➕ 단어장 추가</h2>
-                <form onSubmit={addWordSet} className="flex gap-2">
-                  <input value={wsEmoji} onChange={e => setWsEmoji(e.target.value)} placeholder="📚"
-                    className="border rounded-xl px-3 py-2 text-lg w-16 text-center outline-none" />
-                  <input value={wsName} onChange={e => setWsName(e.target.value)} placeholder="단어장 이름" required
-                    className="border rounded-xl px-3 py-2 text-sm flex-1 outline-none focus:border-slate-400" />
-                  <button type="submit" className="bg-slate-700 text-white rounded-xl px-4 font-bold text-sm hover:bg-slate-800">추가</button>
+              <div style={{ ...cardStyle, padding: "18px 20px" }}>
+                <div style={{ fontWeight: 900, color: "#1F2A44", fontSize: "13px", marginBottom: "12px" }}>➕ 단어장 추가</div>
+                <form onSubmit={addWordSet} style={{ display: "flex", gap: "8px" }}>
+                  <input value={wsEmoji} onChange={e => setWsEmoji(e.target.value)} placeholder="📚" style={{ ...inputStyle, width: "50px", textAlign: "center", fontSize: "18px" }} />
+                  <input value={wsName} onChange={e => setWsName(e.target.value)} placeholder="단어장 이름" required style={{ ...inputStyle, flex: 1 }} />
+                  <button type="submit" style={btnPrimary}>추가</button>
                 </form>
-                {wsError && <p className="text-red-500 text-sm mt-2">{wsError}</p>}
+                {wsError && <p style={{ color: "#E8463A", fontSize: "12px", marginTop: "8px" }}>{wsError}</p>}
               </div>
 
-              {/* 단어장 목록 */}
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                <div className="px-5 py-3 border-b">
-                  <h2 className="font-extrabold text-gray-800">📚 단어장 목록</h2>
-                </div>
+              <div style={{ ...cardStyle, overflow: "hidden" }}>
+                <div style={{ padding: "12px 20px", borderBottom: "1px solid #F0E8C8", fontWeight: 900, color: "#1F2A44", fontSize: "13px" }}>📚 단어장 목록</div>
                 {wordSets.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400 text-sm">단어장이 없어요</div>
+                  <div className="text-center py-8" style={{ color: "#AAAAAA", fontSize: "13px" }}>단어장이 없어요</div>
                 ) : (
-                  <div className="divide-y">
+                  <div>
                     {wordSets.map(ws => (
                       <div key={ws.id}
-                        className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors ${selectedWs?.id === ws.id ? "bg-slate-50" : "hover:bg-gray-50"}`}
+                        style={{ padding: "12px 20px", borderBottom: "1px solid #F8F4EC", display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", background: selectedWs?.id === ws.id ? "#FFFBEE" : "transparent" }}
                         onClick={() => { setSelectedWs(ws); loadWords(ws); }}>
-                        <span className="text-xl">{ws.emoji}</span>
-                        <div className="flex-1">
-                          <p className="font-bold text-gray-800 text-sm">{ws.name}</p>
-                          <p className="text-xs text-gray-400">{ws._count.words}개 단어</p>
+                        <span style={{ fontSize: "18px" }}>{ws.emoji}</span>
+                        <div style={{ flex: 1 }}>
+                          <p style={{ fontWeight: 800, color: "#1F2A44", fontSize: "13px" }}>{ws.name}</p>
+                          <p style={{ fontSize: "11px", color: "#AAAAAA" }}>{ws._count.words}개 단어</p>
                         </div>
-                        <button onClick={e => { e.stopPropagation(); deleteWordSet(ws.id); }}
-                          className="text-xs text-red-400 hover:underline">삭제</button>
+                        <button onClick={e => { e.stopPropagation(); deleteWordSet(ws.id); }} style={{ fontSize: "11px", color: "#E8463A", background: "none", border: "none", cursor: "pointer" }}>삭제</button>
                       </div>
                     ))}
                   </div>
@@ -392,35 +386,29 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* 오른쪽: 선택된 단어장의 단어 */}
             <div className="space-y-4">
               {selectedWs ? (
                 <>
-                  <div className="bg-white rounded-2xl shadow-sm p-5">
-                    <h2 className="font-extrabold text-gray-800 mb-3">{selectedWs.emoji} {selectedWs.name} — 단어 추가</h2>
-                    <form onSubmit={addWord} className="flex gap-2">
-                      <input value={wEng} onChange={e => setWEng(e.target.value)} placeholder="English" required
-                        className="border rounded-xl px-3 py-2 text-sm flex-1 outline-none focus:border-slate-400" />
-                      <input value={wKor} onChange={e => setWKor(e.target.value)} placeholder="한국어 뜻" required
-                        className="border rounded-xl px-3 py-2 text-sm flex-1 outline-none focus:border-slate-400" />
-                      <button type="submit" className="bg-slate-700 text-white rounded-xl px-4 font-bold text-sm hover:bg-slate-800">추가</button>
+                  <div style={{ ...cardStyle, padding: "18px 20px" }}>
+                    <div style={{ fontWeight: 900, color: "#1F2A44", fontSize: "13px", marginBottom: "12px" }}>{selectedWs.emoji} {selectedWs.name} — 단어 추가</div>
+                    <form onSubmit={addWord} style={{ display: "flex", gap: "8px" }}>
+                      <input value={wEng} onChange={e => setWEng(e.target.value)} placeholder="English" required style={{ ...inputStyle, flex: 1 }} />
+                      <input value={wKor} onChange={e => setWKor(e.target.value)} placeholder="한국어 뜻" required style={{ ...inputStyle, flex: 1 }} />
+                      <button type="submit" style={btnPrimary}>추가</button>
                     </form>
-                    {wError && <p className="text-red-500 text-sm mt-2">{wError}</p>}
+                    {wError && <p style={{ color: "#E8463A", fontSize: "12px", marginTop: "8px" }}>{wError}</p>}
                   </div>
-
-                  <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                    <div className="px-5 py-3 border-b">
-                      <h2 className="font-extrabold text-gray-800 text-sm">{wsWords.length}개 단어</h2>
-                    </div>
+                  <div style={{ ...cardStyle, overflow: "hidden" }}>
+                    <div style={{ padding: "12px 20px", borderBottom: "1px solid #F0E8C8", fontWeight: 900, color: "#1F2A44", fontSize: "13px" }}>{wsWords.length}개 단어</div>
                     {wsWords.length === 0 ? (
-                      <div className="text-center py-8 text-gray-400 text-sm">단어를 추가해주세요</div>
+                      <div className="text-center py-8" style={{ color: "#AAAAAA", fontSize: "13px" }}>단어를 추가해주세요</div>
                     ) : (
-                      <div className="divide-y max-h-96 overflow-y-auto">
+                      <div style={{ maxHeight: "360px", overflowY: "auto" }}>
                         {wsWords.map(w => (
-                          <div key={w.id} className="px-4 py-2.5 flex items-center gap-3">
-                            <p className="font-bold text-gray-800 text-sm w-28">{w.english}</p>
-                            <p className="text-gray-500 text-sm flex-1">{w.korean}</p>
-                            <button onClick={() => deleteWord(w.id)} className="text-xs text-red-400 hover:underline">삭제</button>
+                          <div key={w.id} style={{ padding: "10px 20px", borderBottom: "1px solid #F8F4EC", display: "flex", alignItems: "center", gap: "10px" }}>
+                            <span style={{ fontWeight: 800, color: "#1F2A44", fontSize: "13px", width: "110px" }}>{w.english}</span>
+                            <span style={{ color: "#8A96A8", fontSize: "13px", flex: 1 }}>{w.korean}</span>
+                            <button onClick={() => deleteWord(w.id)} style={{ fontSize: "11px", color: "#E8463A", background: "none", border: "none", cursor: "pointer" }}>삭제</button>
                           </div>
                         ))}
                       </div>
@@ -428,96 +416,85 @@ export default function AdminPage() {
                   </div>
                 </>
               ) : (
-                <div className="bg-white rounded-2xl shadow-sm p-8 text-center text-gray-400">
-                  <p className="text-4xl mb-3">👈</p>
-                  <p className="font-bold">단어장을 선택하면<br />단어를 추가할 수 있어요</p>
+                <div style={{ ...cardStyle, padding: "40px", textAlign: "center", color: "#AAAAAA" }}>
+                  <p style={{ fontSize: "36px", marginBottom: "10px" }}>👈</p>
+                  <p style={{ fontWeight: 700 }}>단어장을 선택하면<br />단어를 추가할 수 있어요</p>
                 </div>
               )}
             </div>
           </div>
         )}
+
         {/* ── 학습 결과 ── */}
         {tab === "results" && (
-          <div className="space-y-4">
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              <div className="px-5 py-3 border-b flex items-center justify-between">
-                <h2 className="font-extrabold text-gray-800">📊 학생별 학습 결과</h2>
-                <button onClick={loadResults} className="text-xs text-slate-500 hover:text-slate-800">🔄 새로고침</button>
-              </div>
-              {students.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">학생이 없어요</div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-gray-50 border-b">
-                        <th className="px-4 py-3 text-left font-bold text-gray-600">학생</th>
-                        {resultsWordSets.map(ws => (
-                          <th key={ws.id} className="px-4 py-3 text-center font-bold text-gray-600 whitespace-nowrap">
-                            {ws.emoji} {ws.name}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {students.map(s => (
-                        <tr key={s.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xl">{s.avatar}</span>
-                              <div>
-                                <p className="font-bold text-gray-800">{s.name}</p>
-                                <p className="text-xs text-gray-400">{s.username}</p>
-                              </div>
-                            </div>
-                          </td>
-                          {resultsWordSets.map(ws => {
-                            const wsScores = scores.filter(sc => sc.studentId === s.id && sc.wordSetId === ws.id);
-                            const progress = progresses.find(p => p.studentId === s.id && p.wordSetId === ws.id);
-                            const totalGroups = Math.ceil(ws._count.words / 5);
-
-                            if (wsScores.length === 0 && !progress) {
-                              return <td key={ws.id} className="px-4 py-3 text-center text-gray-300 text-xs">미시작</td>;
-                            }
-
-                            const best = wsScores.reduce((max, sc) => {
-                              const pct = sc.totalQuestions > 0 ? Math.round(sc.score / sc.totalQuestions * 100) : 0;
-                              return pct > max ? pct : max;
-                            }, 0);
-                            const latest = wsScores[0];
-                            const latestPct = latest && latest.totalQuestions > 0
-                              ? Math.round(latest.score / latest.totalQuestions * 100) : null;
-                            const completedGroups = progress?.batchIdx ?? (wsScores.length > 0 ? totalGroups : 0);
-                            const isComplete = !progress && wsScores.length > 0;
-
-                            return (
-                              <td key={ws.id} className="px-4 py-3 text-center">
-                                {isComplete ? (
-                                  <div>
-                                    <span className="inline-block bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full mb-1">완료 ✅</span>
-                                    {latestPct !== null && <p className="text-xs text-gray-500">최근 {latestPct}%</p>}
-                                  </div>
-                                ) : (
-                                  <div>
-                                    <span className="inline-block bg-blue-100 text-blue-600 text-xs font-bold px-2 py-0.5 rounded-full mb-1">
-                                      {completedGroups}/{totalGroups} 그룹
-                                    </span>
-                                    {latestPct !== null && <p className="text-xs text-gray-500">최근 {latestPct}%</p>}
-                                  </div>
-                                )}
-                                {wsScores.length > 0 && (
-                                  <p className="text-xs text-gray-300">{wsScores.length}회 도전</p>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+          <div style={{ ...cardStyle, overflow: "hidden" }}>
+            <div style={{ padding: "14px 20px", borderBottom: "1px solid #F0E8C8", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontWeight: 900, color: "#1F2A44", fontSize: "14px" }}>📊 학생별 학습 결과</span>
+              <button onClick={loadResults} style={{ fontSize: "11px", color: "#76C043", background: "none", border: "none", cursor: "pointer", fontWeight: 700 }}>🔄 새로고침</button>
             </div>
+            {students.length === 0 ? (
+              <div className="text-center py-12" style={{ color: "#AAAAAA" }}>학생이 없어요</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr style={{ background: "#FFFBEE", borderBottom: "1px solid #F0E8C8" }}>
+                      <th className="px-4 py-3 text-left" style={{ fontWeight: 900, color: "#1F2A44" }}>학생</th>
+                      {resultsWordSets.map(ws => (
+                        <th key={ws.id} className="px-4 py-3 text-center whitespace-nowrap" style={{ fontWeight: 900, color: "#1F2A44" }}>
+                          {ws.emoji} {ws.name}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {students.map(s => (
+                      <tr key={s.id} style={{ borderBottom: "1px solid #F8F4EC" }}>
+                        <td className="px-4 py-3">
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            <span style={{ fontSize: "20px" }}>{s.avatar}</span>
+                            <div>
+                              <p style={{ fontWeight: 800, color: "#1F2A44", fontSize: "13px" }}>{s.name}</p>
+                              <p style={{ fontSize: "11px", color: "#AAAAAA" }}>@{s.username}</p>
+                            </div>
+                          </div>
+                        </td>
+                        {resultsWordSets.map(ws => {
+                          const wsScores = scores.filter(sc => sc.studentId === s.id && sc.wordSetId === ws.id);
+                          const progress = progresses.find(p => p.studentId === s.id && p.wordSetId === ws.id);
+                          const totalGroups = Math.ceil(ws._count.words / 5);
+                          if (wsScores.length === 0 && !progress) {
+                            return <td key={ws.id} className="px-4 py-3 text-center" style={{ color: "#CCCCCC", fontSize: "11px" }}>미시작</td>;
+                          }
+                          const latest = wsScores[0];
+                          const latestPct = latest && latest.totalQuestions > 0 ? Math.round(latest.score / latest.totalQuestions * 100) : null;
+                          const completedGroups = progress?.batchIdx ?? (wsScores.length > 0 ? totalGroups : 0);
+                          const isComplete = !progress && wsScores.length > 0;
+                          return (
+                            <td key={ws.id} className="px-4 py-3 text-center">
+                              {isComplete ? (
+                                <div>
+                                  <span style={{ display: "inline-block", background: "#F0FBE8", color: "#76C043", fontSize: "10px", fontWeight: 800, padding: "2px 8px", borderRadius: "999px", marginBottom: "3px" }}>완료 ✅</span>
+                                  {latestPct !== null && <p style={{ fontSize: "10px", color: "#AAAAAA" }}>최근 {latestPct}%</p>}
+                                </div>
+                              ) : (
+                                <div>
+                                  <span style={{ display: "inline-block", background: "#F0F4FF", color: "#4466CC", fontSize: "10px", fontWeight: 800, padding: "2px 8px", borderRadius: "999px", marginBottom: "3px" }}>
+                                    {completedGroups}/{totalGroups} 그룹
+                                  </span>
+                                  {latestPct !== null && <p style={{ fontSize: "10px", color: "#AAAAAA" }}>최근 {latestPct}%</p>}
+                                </div>
+                              )}
+                              {wsScores.length > 0 && <p style={{ fontSize: "10px", color: "#CCCCCC" }}>{wsScores.length}회 도전</p>}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>

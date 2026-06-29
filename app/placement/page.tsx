@@ -46,7 +46,6 @@ export default function PlacementPage() {
     const ws: WordSet[] = await wsRes.json();
     setWordSets(ws);
 
-    // 각 학년에서 단어 로드 후 3개씩 샘플링
     const allWords: { wordSetId: number; words: Word[] }[] = await Promise.all(
       ws.map(async w => {
         const r = await fetch(`/api/wordsets/${w.id}/words`);
@@ -55,7 +54,6 @@ export default function PlacementPage() {
       })
     );
 
-    // 전체 단어 풀 (보기 생성용)
     const allWordPool: Word[] = allWords.flatMap(w => w.words);
 
     const qs: Question[] = allWords.flatMap(({ wordSetId, words }) => {
@@ -98,51 +96,22 @@ export default function PlacementPage() {
         setSelected(null);
         setIsCorrect(null);
       } else {
-        finishTest();
+        setPhase("result");
       }
     }, 700);
   }
 
-  function finishTest() {
-    // 추천 학년: 정답률 70% 이상인 가장 높은 학년, 없으면 가장 낮은 학년
-    const passing = wordSets.filter(ws => {
-      const s = scores[ws.id];
-      // scores state may not be fully updated yet, compute from questions
-      const wsQs = questions.filter(q => q.wordSetId === ws.id);
-      // We'll recompute from the answers we have
-      return true; // placeholder
-    });
-
-    // 각 학년 점수를 questions 기반으로 재계산
-    const finalScores: Record<number, { correct: number; total: number }> = {};
-    for (const ws of wordSets) finalScores[ws.id] = { correct: 0, total: 0 };
-
-    // scores state는 비동기 업데이트라 마지막 답이 반영 안 될 수 있어 재계산
-    for (const q of questions) {
-      // selected는 마지막 문제만 있으므로 전체를 추적할 수 없음
-      // → scores state 사용 (마지막 문제는 setTimeout 전에 setScores 완료됨)
-    }
-
-    // scores state 사용 (setTimeout 내에서 실행되므로 최신값)
-    setPhase("result");
-  }
-
-  // result 단계에서 추천 계산
   useEffect(() => {
     if (phase !== "result" || wordSets.length === 0) return;
-
-    // 각 학년 점수 재계산 (questions 기반, selected 추적 필요 없이 scores state 사용)
-    // 70% 이상인 학년 중 가장 높은 것
     const passingSets = wordSets.filter(ws => {
       const s = scores[ws.id];
       if (!s || s.total === 0) return false;
       return s.correct / s.total >= 0.7;
     });
-
     if (passingSets.length > 0) {
       setRecommended(passingSets[passingSets.length - 1]);
     } else {
-      setRecommended(wordSets[0]); // 가장 쉬운 학년
+      setRecommended(wordSets[0]);
     }
   }, [phase, wordSets, scores]);
 
@@ -155,23 +124,58 @@ export default function PlacementPage() {
     router.replace(`/challenge?startSet=${wsId}`);
   }
 
+  const GradeCard = ({ ws, isRec }: { ws: WordSet; isRec: boolean }) => {
+    const s = scores[ws.id] ?? { correct: 0, total: QUESTIONS_PER_GRADE };
+    const pct = s.total > 0 ? Math.round(s.correct / s.total * 100) : 0;
+    const gradeNum = ws.name.replace("학년", "");
+    return (
+      <div style={{
+        position: "relative", background: "#fff",
+        border: isRec ? "2px solid #F6E27F" : "1.5px solid #F0E8C8",
+        borderRadius: "14px", padding: "12px 14px",
+        display: "flex", alignItems: "center", gap: "12px", overflow: "hidden",
+      }}>
+        <img src="/TheFluent/logo.symbol.png" alt="" style={{
+          position: "absolute", width: "52px", height: "52px",
+          objectFit: "contain", bottom: "-6px", right: "-4px",
+          opacity: isRec ? 0.15 : 0.07,
+        }} />
+        <div style={{ position: "relative", zIndex: 1, textAlign: "center", minWidth: "30px" }}>
+          <div style={{ fontSize: "18px", fontWeight: 900, color: isRec ? "#1F2A44" : "#CCCCCC", lineHeight: 1 }}>{gradeNum}</div>
+          <div style={{ fontSize: "9px", color: isRec ? "#8A96A8" : "#DDDDDD" }}>학년</div>
+        </div>
+        <div style={{ flex: 1, position: "relative", zIndex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "5px" }}>
+            <span style={{ fontSize: "12px", fontWeight: 800, color: isRec ? "#1F2A44" : "#AAAAAA" }}>{ws.name}</span>
+            {isRec && <span style={{ fontSize: "9px", background: "#F6E27F", color: "#1F2A44", borderRadius: "999px", padding: "1px 7px", fontWeight: 800 }}>추천!</span>}
+          </div>
+          <div style={{ height: "5px", background: "#F0ECE0", borderRadius: "999px", overflow: "hidden" }}>
+            <div style={{ width: `${pct}%`, height: "100%", background: pct >= 70 ? "#76C043" : "#F6E27F", borderRadius: "999px" }} />
+          </div>
+        </div>
+        <span style={{ fontSize: "12px", fontWeight: 900, color: pct >= 70 ? "#76C043" : "#AAAAAA", position: "relative", zIndex: 1 }}>
+          {s.correct}/{s.total}
+        </span>
+      </div>
+    );
+  };
+
   // ── 인트로 ──
   if (phase === "intro") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-400 to-orange-500 flex flex-col items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm text-center">
-          <div className="text-6xl mb-4">🎯</div>
-          <h1 className="text-2xl font-extrabold text-gray-800 mb-2">레벨 테스트</h1>
-          <p className="text-gray-500 text-sm mb-2">학년별로 단어를 <strong>3문제씩</strong> 풀어볼게요.</p>
-          <p className="text-gray-500 text-sm mb-6">나에게 딱 맞는 레벨을 찾아드려요! 😊</p>
-          <div className="bg-amber-50 rounded-2xl p-4 mb-6 text-left space-y-2">
-            <p className="text-xs text-amber-700 font-bold">📌 테스트 안내</p>
-            <p className="text-xs text-gray-500">· 총 12문제 (학년별 3문제)</p>
-            <p className="text-xs text-gray-500">· 한국어 뜻 보고 영어 단어 고르기</p>
-            <p className="text-xs text-gray-500">· 결과에 따라 시작 학년 추천</p>
+      <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "#FFF9E6" }}>
+        <div className="w-full max-w-sm text-center" style={{ background: "#fff", borderRadius: "24px", border: "1.5px solid #F0E8C8", padding: "32px 28px", boxShadow: "0 2px 16px rgba(246,226,127,0.2)" }}>
+          <img src="/TheFluent/logo.clear.png" alt="The Fluent" style={{ height: "48px", objectFit: "contain", margin: "0 auto 20px", display: "block" }} />
+          <div className="text-5xl mb-3">🎯</div>
+          <h1 className="text-2xl font-black mb-2" style={{ color: "#1F2A44" }}>레벨 테스트</h1>
+          <p className="text-sm mb-6" style={{ color: "#8A96A8", lineHeight: 1.7 }}>나에게 딱 맞는 학년을<br />찾아드릴게요! 😊</p>
+          <div className="text-left mb-6" style={{ background: "#FFFBEE", border: "1.5px solid #F0E8C8", borderRadius: "14px", padding: "14px" }}>
+            <p className="text-xs font-black mb-2" style={{ color: "#1F2A44" }}>📌 테스트 안내</p>
+            <p className="text-xs" style={{ color: "#8A96A8", lineHeight: 1.9 }}>· 총 12문제 (학년별 3문제)<br />· 한국어 뜻 보고 영어 단어 고르기<br />· 결과에 따라 시작 학년 추천</p>
           </div>
           <button onClick={loadAndStart}
-            className="w-full py-4 rounded-2xl text-white font-extrabold text-lg bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg">
+            className="w-full py-4 font-black text-lg rounded-2xl transition-all active:scale-95"
+            style={{ background: "#1F2A44", color: "#F6E27F" }}>
             테스트 시작! 🚀
           </button>
         </div>
@@ -183,42 +187,47 @@ export default function PlacementPage() {
   if (phase === "quiz") {
     const q = questions[qIdx];
     if (!q) return null;
-    const progress = (qIdx / questions.length) * 100;
+    const progress = Math.round((qIdx / questions.length) * 100);
     const gradeQIdx = questions.slice(0, qIdx).filter(x => x.wordSetId === q.wordSetId).length;
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-amber-400 to-orange-500 flex flex-col">
-        <div className="px-4 py-4 flex items-center gap-3">
-          <div className="flex-1 text-center">
-            <p className="text-white/70 text-xs">{q.wordSetEmoji} {q.wordSetName} · {gradeQIdx + 1}/{QUESTIONS_PER_GRADE}문제</p>
-            <p className="text-white font-bold text-sm">레벨 테스트</p>
+      <div className="min-h-screen flex flex-col" style={{ background: "#FFF9E6" }}>
+        {/* 남색 헤더 */}
+        <div style={{ background: "#1F2A44", padding: "16px 20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+            <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)" }}>{q.wordSetEmoji} {q.wordSetName} · {gradeQIdx + 1}/{QUESTIONS_PER_GRADE}문제</div>
+            <div style={{ fontSize: "11px", color: "#F6E27F", fontWeight: 800 }}>{qIdx + 1} / {questions.length}</div>
           </div>
-          <span className="text-white/60 text-sm">{qIdx + 1}/12</span>
-        </div>
-
-        <div className="h-2 bg-white/20">
-          <div className="h-full bg-white/70 transition-all duration-500 rounded-r-full" style={{ width: `${progress}%` }} />
+          <div style={{ height: "6px", background: "rgba(255,255,255,0.15)", borderRadius: "999px", overflow: "hidden" }}>
+            <div style={{ width: `${progress}%`, height: "100%", background: "#F6E27F", borderRadius: "999px", transition: "width 0.5s" }} />
+          </div>
+          <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", textAlign: "center", marginTop: "8px" }}>레벨 테스트</div>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-5 gap-5">
-          <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-8 text-center">
-            <p className="text-xs text-gray-400 mb-2 font-bold">한국어 뜻</p>
-            <p className="text-4xl font-extrabold text-gray-800">{q.word.korean}</p>
-            {isCorrect === true  && <p className="mt-3 text-green-500 font-extrabold">✅ {q.word.english}</p>}
-            {isCorrect === false && <p className="mt-3 text-red-500 font-bold text-sm">❌ 정답: {q.word.english}</p>}
+          {/* 단어 카드 */}
+          <div className="w-full max-w-sm text-center" style={{ background: "#fff", border: "1.5px solid #F0E8C8", borderRadius: "20px", padding: "32px 24px" }}>
+            <p className="text-xs font-black mb-3 uppercase tracking-wide" style={{ color: "#AAAAAA" }}>한국어 뜻</p>
+            <p className="text-4xl font-black" style={{ color: "#1F2A44" }}>{q.word.korean}</p>
+            {isCorrect === true  && <p className="mt-3 font-black" style={{ color: "#76C043" }}>✅ {q.word.english}</p>}
+            {isCorrect === false && <p className="mt-3 text-sm font-bold" style={{ color: "#E8463A" }}>❌ 정답: {q.word.english}</p>}
           </div>
 
+          {/* 보기 버튼 */}
           <div className="w-full max-w-sm grid grid-cols-2 gap-3">
             {q.choices.map(choice => {
-              let cls = "bg-white/90 text-gray-800 border-2 border-white/30 hover:bg-white active:scale-95";
+              let bg = "#1F2A44";
+              let border = "1.5px solid #2E3D5A";
+              let color = "rgba(255,255,255,0.6)";
               if (selected !== null) {
-                if (choice === q.word.english) cls = "bg-green-400 text-white border-2 border-green-300";
-                else if (choice === selected)  cls = "bg-red-400 text-white border-2 border-red-300";
-                else                           cls = "bg-white/40 text-white/50 border-2 border-white/20";
+                if (choice === q.word.english)   { bg = "#76C043"; border = "none"; color = "#fff"; }
+                else if (choice === selected)     { bg = "#E8463A"; border = "none"; color = "#fff"; }
+                else                              { bg = "rgba(31,42,68,0.4)"; color = "rgba(255,255,255,0.3)"; }
               }
               return (
                 <button key={choice} onClick={() => handleChoice(choice)} disabled={selected !== null}
-                  className={`rounded-2xl p-4 text-center font-bold text-base transition-all duration-200 shadow-md ${cls}`}>
+                  className="rounded-2xl p-4 text-center font-bold text-sm transition-all duration-200 active:scale-95"
+                  style={{ background: bg, border, color }}>
                   {choice}
                 </button>
               );
@@ -232,53 +241,31 @@ export default function PlacementPage() {
   // ── 결과 ──
   if (phase === "result") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-400 to-orange-500 flex flex-col items-center justify-center px-4">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm">
+      <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "#FFF9E6" }}>
+        <div className="w-full max-w-sm" style={{ background: "#fff", borderRadius: "24px", border: "1.5px solid #F0E8C8", padding: "28px", boxShadow: "0 2px 16px rgba(246,226,127,0.2)" }}>
           <div className="text-center mb-5">
-            <div className="text-5xl mb-2">🎯</div>
-            <h2 className="text-2xl font-extrabold text-gray-800">테스트 완료!</h2>
+            <div className="text-5xl mb-2">🎉</div>
+            <h2 className="text-2xl font-black" style={{ color: "#1F2A44" }}>테스트 완료!</h2>
+            {recommended && (
+              <p className="text-sm mt-1" style={{ color: "#8A96A8" }}>
+                <span style={{ color: "#1F2A44", fontWeight: 800 }}>{recommended.name}</span>부터 시작하는 걸 추천해요!
+              </p>
+            )}
           </div>
 
-          {/* 학년별 점수 */}
           <div className="space-y-2 mb-5">
-            {wordSets.map(ws => {
-              const s = scores[ws.id] ?? { correct: 0, total: QUESTIONS_PER_GRADE };
-              const pct = s.total > 0 ? Math.round(s.correct / s.total * 100) : 0;
-              const isRec = recommended?.id === ws.id;
-              return (
-                <div key={ws.id} className={`rounded-2xl px-4 py-3 flex items-center gap-3 ${isRec ? "bg-amber-50 ring-2 ring-amber-400" : "bg-gray-50"}`}>
-                  <span className="text-2xl">{ws.emoji}</span>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-gray-800 text-sm">{ws.name}</p>
-                      {isRec && <span className="text-xs bg-amber-400 text-white px-2 py-0.5 rounded-full font-bold">추천!</span>}
-                    </div>
-                    <div className="h-1.5 bg-gray-200 rounded-full mt-1">
-                      <div className="h-full rounded-full bg-amber-400 transition-all" style={{ width: `${pct}%` }} />
-                    </div>
-                  </div>
-                  <span className={`text-sm font-extrabold ${pct >= 70 ? "text-green-500" : "text-gray-400"}`}>{s.correct}/{s.total}</span>
-                </div>
-              );
-            })}
+            {wordSets.map(ws => (
+              <GradeCard key={ws.id} ws={ws} isRec={recommended?.id === ws.id} />
+            ))}
           </div>
 
           {recommended && (
-            <div className="text-center mb-4">
-              <p className="text-sm text-gray-500">
-                <span className="font-bold text-amber-500">{recommended.emoji} {recommended.name}</span>부터 시작하는 걸 추천해요!
-              </p>
-            </div>
+            <button onClick={() => goToChallenge(recommended.id)}
+              className="w-full py-4 font-black text-lg rounded-2xl transition-all active:scale-95"
+              style={{ background: "#1F2A44", color: "#F6E27F" }}>
+              {recommended.name}으로 시작! →
+            </button>
           )}
-
-          <div className="space-y-2">
-            {recommended && (
-              <button onClick={() => goToChallenge(recommended.id)}
-                className="w-full py-4 rounded-2xl text-white font-extrabold text-lg bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg">
-                {recommended.emoji} {recommended.name}으로 시작! →
-              </button>
-            )}
-          </div>
         </div>
       </div>
     );
