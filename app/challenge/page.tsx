@@ -276,6 +276,11 @@ function ChallengePageInner() {
     if (next >= batches.length) {
       // 완료 → 진도 삭제
       fetch(`/api/progress?wordSetId=${selectedSet?.id}`, { method: "DELETE" }).catch(() => {});
+      // 추천 학년 완료 시 잠금 해제
+      if (typeof window !== "undefined") {
+        const placedId = Number(localStorage.getItem("placedWordSetId") || 0);
+        if (placedId && selectedSet?.id === placedId) localStorage.removeItem("placedWordSetId");
+      }
       setScreen("all-done");
     } else {
       setBatchIdx(next);
@@ -306,6 +311,8 @@ function ChallengePageInner() {
         </div>
       );
     }
+    const placedId = typeof window !== "undefined" ? Number(localStorage.getItem("placedWordSetId") || 0) : 0;
+    const placedSet = placedId ? wordSets.find(ws => ws.id === placedId) : null;
     return (
       <div className="min-h-screen bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 px-4 py-8">
         <div className="max-w-lg mx-auto">
@@ -313,15 +320,34 @@ function ChallengePageInner() {
             <h1 className="text-2xl font-extrabold text-white">📚 학년 선택</h1>
             <button onClick={handleLogout} className="text-white/60 hover:text-white text-sm">로그아웃</button>
           </div>
-          <p className="text-purple-200 text-sm mb-5">학년을 선택하면 5개씩 묶어서 외우고 테스트해요!</p>
+          {placedSet ? (
+            <div className="bg-white/20 rounded-2xl px-4 py-3 mb-5 text-white text-sm">
+              🎯 레벨 테스트 결과 <span className="font-extrabold">{placedSet.emoji} {placedSet.name}</span>이 추천됐어요!<br />
+              <span className="text-purple-200 text-xs">추천 학년을 완료하면 다른 학년도 도전할 수 있어요 💪</span>
+            </div>
+          ) : (
+            <p className="text-purple-200 text-sm mb-5">학년을 선택하면 5개씩 묶어서 외우고 테스트해요!</p>
+          )}
           <div className="grid grid-cols-2 gap-4">
             {wordSets.map(ws => {
               const savedBatch = progressMap[ws.id];
               const totalGroups = Math.ceil(ws._count.words / BATCH_SIZE);
-              return (
+              const isLocked = placedId > 0 && ws.id !== placedId;
+              return isLocked ? (
+                <div key={ws.id} className="bg-white/30 rounded-2xl p-5 text-left relative opacity-50 cursor-not-allowed">
+                  <span className="absolute top-3 right-3 text-lg">🔒</span>
+                  <p className="text-4xl mb-2 grayscale">{ws.emoji}</p>
+                  <p className="font-extrabold text-white text-lg">{ws.name}</p>
+                  <p className="text-xs text-white/60 mt-1">{ws._count.words}개 단어</p>
+                  <p className="text-xs text-white/50 mt-1">추천 학년 완료 후 해제</p>
+                </div>
+              ) : (
                 <button key={ws.id} onClick={() => selectSet(ws)}
                   className="bg-white rounded-2xl p-5 text-left shadow-lg hover:scale-105 active:scale-95 transition-transform relative">
-                  {savedBatch > 0 && (
+                  {placedId > 0 && ws.id === placedId && (
+                    <span className="absolute top-3 right-3 bg-amber-400 text-white text-xs font-bold px-2 py-0.5 rounded-full">추천!</span>
+                  )}
+                  {savedBatch > 0 && placedId === 0 && (
                     <span className="absolute top-3 right-3 bg-violet-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                       이어하기
                     </span>

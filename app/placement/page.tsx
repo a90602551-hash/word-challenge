@@ -147,6 +147,9 @@ export default function PlacementPage() {
   }, [phase, wordSets, scores]);
 
   function goToChallenge(wsId: number) {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("placedWordSetId", String(wsId));
+    }
     router.push(`/challenge?startSet=${wsId}`);
   }
 
