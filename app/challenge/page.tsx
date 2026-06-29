@@ -82,6 +82,15 @@ function ChallengePageInner() {
       if (startSetId) {
         const target = sets.find(ws => ws.id === startSetId);
         if (target) setTimeout(() => selectSet(target), 100);
+        return;
+      }
+      // 배치테스트 결과로 잠긴 상태면 해제된 학년으로 자동 이동
+      const placedId    = typeof window !== "undefined" ? Number(localStorage.getItem("wc_placed_id") || 0) : 0;
+      const unlockedIdx = typeof window !== "undefined" ? Number(localStorage.getItem("wc_unlocked_idx") ?? -1) : -1;
+      if (placedId && unlockedIdx >= 0 && unlockedIdx < sets.length) {
+        const target = sets[unlockedIdx];
+        if (target) setTimeout(() => selectSet(target), 100);
+        return;
       }
       // 각 학년의 진도 조회
       Promise.all(sets.map(ws => fetch(`/api/progress?wordSetId=${ws.id}`).then(r => r.ok ? r.json() : null)))
