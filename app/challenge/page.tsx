@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 function speak(text: string) {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
@@ -36,6 +36,7 @@ function getChoices(correct: Word, allWords: Word[], type: "english" | "korean")
 
 export default function ChallengePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [wordSets, setWordSets]       = useState<WordSet[]>([]);
   const [progressMap, setProgressMap] = useState<Record<number, number>>({});  // wordSetId → batchIdx
   const [allWords, setAllWords]       = useState<Word[]>([]);
@@ -63,8 +64,18 @@ export default function ChallengePage() {
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => { if (!r.ok) router.push("/"); }).catch(() => router.push("/"));
+    // 첫 방문자면 레벨 테스트로 이동
+    fetch("/api/challenge/score/me").then(r => r.json()).then(d => {
+      if (d.isFirst) router.push("/placement");
+    }).catch(() => {});
     fetch("/api/wordsets").then(r => r.json()).then((sets: WordSet[]) => {
       setWordSets(sets);
+      // 배치 테스트에서 추천 학년으로 왔으면 자동 선택
+      const startSetId = Number(searchParams.get("startSet"));
+      if (startSetId) {
+        const target = sets.find(ws => ws.id === startSetId);
+        if (target) setTimeout(() => selectSet(target), 100);
+      }
       // 각 학년의 진도 조회
       Promise.all(sets.map(ws => fetch(`/api/progress?wordSetId=${ws.id}`).then(r => r.ok ? r.json() : null)))
         .then(results => {
