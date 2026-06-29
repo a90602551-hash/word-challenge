@@ -82,7 +82,7 @@ export default function MainPage() {
         {/* 헤더 */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-5">
-            <img src="/TheFluent/logo.clear.png" alt="The Fluent" style={{ height: "64px", objectFit: "contain" }} />
+            <img src="/TheFluent/logo.clear.png" alt="The Fluent" style={{ height: "110px", objectFit: "contain" }} />
             <div style={{ width: "1px", height: "40px", background: "#E0D8C0" }} />
             <div>
               <h1 className="text-2xl font-black" style={{ color: "#1F2A44", lineHeight: 1.1 }}>단어 챌린지</h1>
@@ -109,13 +109,13 @@ export default function MainPage() {
                   style={{ position: "relative", height: "60px", overflow: "hidden",
                     ...(gradeTab === i
                       ? { background: "#1F2A44" }
-                      : { background: "#F5F5F5" }) }}>
+                      : { background: "#ECEADE" }) }}>
                   <img src="/TheFluent/logo.symbol.png" alt=""
                     style={{ position: "absolute", width: "52px", height: "52px", objectFit: "contain",
-                      bottom: "-6px", right: "-6px", opacity: gradeTab === i ? 0.18 : 0.07 }} />
+                      bottom: "-6px", right: "-6px", opacity: gradeTab === i ? 0.55 : 0.28 }} />
                   <div style={{ position: "relative", zIndex: 1, lineHeight: 1 }}>
-                    <div style={{ fontSize: "20px", fontWeight: 900, color: gradeTab === i ? "#F6E27F" : "#CCCCCC" }}>{r.name.replace("학년", "")}</div>
-                    <div style={{ fontSize: "9px", fontWeight: 800, marginTop: "2px", color: gradeTab === i ? "rgba(246,226,127,0.7)" : "#DDDDDD" }}>학년</div>
+                    <div style={{ fontSize: "20px", fontWeight: 900, color: gradeTab === i ? "#F6E27F" : "#888888" }}>{r.name.replace("학년", "")}</div>
+                    <div style={{ fontSize: "9px", fontWeight: 800, marginTop: "2px", color: gradeTab === i ? "rgba(246,226,127,0.7)" : "#AAAAAA" }}>학년</div>
                   </div>
                 </button>
               ))}
