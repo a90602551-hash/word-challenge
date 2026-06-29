@@ -66,6 +66,8 @@ function ChallengePageInner() {
     fetch("/api/auth/me")
       .then(r => {
         if (!r.ok) { router.push("/"); return; }
+        // startSet 파라미터가 있으면 배치테스트에서 온 것 → 체크 생략
+        if (searchParams.get("startSet")) return;
         // 첫 방문자면 레벨 테스트로 이동
         return fetch("/api/challenge/score/me")
           .then(r2 => r2.json())
