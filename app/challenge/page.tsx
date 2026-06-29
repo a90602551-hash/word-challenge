@@ -276,10 +276,20 @@ function ChallengePageInner() {
     if (next >= batches.length) {
       // 완료 → 진도 삭제
       fetch(`/api/progress?wordSetId=${selectedSet?.id}`, { method: "DELETE" }).catch(() => {});
-      // 추천 학년 완료 시 잠금 해제
-      if (typeof window !== "undefined") {
-        const placedId = Number(localStorage.getItem("placedWordSetId") || 0);
-        if (placedId && selectedSet?.id === placedId) localStorage.removeItem("placedWordSetId");
+      // 완료 시 다음 학년 잠금 해제
+      if (typeof window !== "undefined" && localStorage.getItem("wc_placed_id")) {
+        const curIdx = wordSets.findIndex(ws => ws.id === selectedSet?.id);
+        const curUnlocked = Number(localStorage.getItem("wc_unlocked_idx") ?? curIdx);
+        if (curIdx >= 0 && curIdx >= curUnlocked) {
+          const nextIdx = curIdx + 1;
+          if (nextIdx < wordSets.length) {
+            localStorage.setItem("wc_unlocked_idx", String(nextIdx));
+          } else {
+            // 전체 완료 → 잠금 전부 해제
+            localStorage.removeItem("wc_placed_id");
+            localStorage.removeItem("wc_unlocked_idx");
+          }
+        }
       }
       setScreen("all-done");
     } else {
@@ -311,8 +321,9 @@ function ChallengePageInner() {
         </div>
       );
     }
-    const placedId = typeof window !== "undefined" ? Number(localStorage.getItem("placedWordSetId") || 0) : 0;
-    const placedSet = placedId ? wordSets.find(ws => ws.id === placedId) : null;
+    const placedId      = typeof window !== "undefined" ? Number(localStorage.getItem("wc_placed_id") || 0) : 0;
+    const unlockedIdx   = typeof window !== "undefined" ? Number(localStorage.getItem("wc_unlocked_idx") ?? -1) : -1;
+    const placedSet     = placedId ? wordSets.find(ws => ws.id === placedId) : null;
     return (
       <div className="min-h-screen bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 px-4 py-8">
         <div className="max-w-lg mx-auto">
@@ -332,7 +343,8 @@ function ChallengePageInner() {
             {wordSets.map(ws => {
               const savedBatch = progressMap[ws.id];
               const totalGroups = Math.ceil(ws._count.words / BATCH_SIZE);
-              const isLocked = placedId > 0 && ws.id !== placedId;
+              const wsIdx    = wordSets.findIndex(w => w.id === ws.id);
+              const isLocked = placedId > 0 && wsIdx > unlockedIdx;
               return isLocked ? (
                 <div key={ws.id} className="bg-white/30 rounded-2xl p-5 text-left relative opacity-50 cursor-not-allowed">
                   <span className="absolute top-3 right-3 text-lg">🔒</span>
@@ -344,8 +356,10 @@ function ChallengePageInner() {
               ) : (
                 <button key={ws.id} onClick={() => selectSet(ws)}
                   className="bg-white rounded-2xl p-5 text-left shadow-lg hover:scale-105 active:scale-95 transition-transform relative">
-                  {placedId > 0 && ws.id === placedId && (
-                    <span className="absolute top-3 right-3 bg-amber-400 text-white text-xs font-bold px-2 py-0.5 rounded-full">추천!</span>
+                  {placedId > 0 && wsIdx === unlockedIdx && (
+                    <span className="absolute top-3 right-3 bg-amber-400 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                      {wsIdx === wordSets.findIndex(w => w.id === placedId) ? "추천!" : "🔓 새로 해제!"}
+                    </span>
                   )}
                   {savedBatch > 0 && placedId === 0 && (
                     <span className="absolute top-3 right-3 bg-violet-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">

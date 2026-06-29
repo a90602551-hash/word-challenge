@@ -148,7 +148,9 @@ export default function PlacementPage() {
 
   function goToChallenge(wsId: number) {
     if (typeof window !== "undefined") {
-      localStorage.setItem("placedWordSetId", String(wsId));
+      const idx = wordSets.findIndex(ws => ws.id === wsId);
+      localStorage.setItem("wc_placed_id", String(wsId));
+      localStorage.setItem("wc_unlocked_idx", String(idx));
     }
     router.push(`/challenge?startSet=${wsId}`);
   }
