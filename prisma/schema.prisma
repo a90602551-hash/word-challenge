@@ -25,6 +25,8 @@ model Student {
   avatar          String           @default("🐥")
   approved        Boolean          @default(false)
   isEnrolled      Boolean          @default(true)
+  parentName      String?
+  parentPhone     String?
   challengeScores   ChallengeScore[]
   learningProgress  LearningProgress[]
   createdAt       DateTime         @default(now())

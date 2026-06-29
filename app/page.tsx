@@ -20,6 +20,8 @@ export default function MainPage() {
   const [name, setName]         = useState("");
   const [avatar, setAvatar]     = useState("🐥");
   const [isEnrolled, setIsEnrolled] = useState(true);
+  const [parentName, setParentName]   = useState("");
+  const [parentPhone, setParentPhone] = useState("");
   const [error, setError]       = useState("");
   const [loading, setLoading]   = useState(false);
   const [rankings, setRankings] = useState<GradeRanking[]>([]);
@@ -56,7 +58,7 @@ export default function MainPage() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, username, password, avatar, isEnrolled }),
+      body: JSON.stringify({ name, username, password, avatar, isEnrolled, parentName, parentPhone }),
     });
     const data = await res.json();
     setLoading(false);
@@ -211,6 +213,22 @@ export default function MainPage() {
                   </button>
                 </div>
               </div>
+              {!isEnrolled && (
+                <>
+                  <div>
+                    <label className="text-sm font-bold text-gray-500 mb-1 block">학부모 성함</label>
+                    <input type="text" value={parentName} onChange={e => setParentName(e.target.value)} required
+                      placeholder="학부모 성함을 입력하세요"
+                      className="w-full border-2 border-gray-200 focus:border-purple-400 rounded-2xl px-4 py-3 text-lg outline-none transition-all" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-bold text-gray-500 mb-1 block">학부모 휴대폰 번호</label>
+                    <input type="tel" value={parentPhone} onChange={e => setParentPhone(e.target.value)} required
+                      placeholder="010-0000-0000"
+                      className="w-full border-2 border-gray-200 focus:border-purple-400 rounded-2xl px-4 py-3 text-lg outline-none transition-all" />
+                  </div>
+                </>
+              )}
               <div>
                 <label className="text-sm font-bold text-gray-500 mb-2 block">나를 나타낼 아바타 고르기</label>
                 <div className="flex flex-wrap gap-2">
