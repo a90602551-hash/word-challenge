@@ -110,11 +110,9 @@ export default function MainPage() {
                     ...(gradeTab === i
                       ? { background: "#1F2A44" }
                       : { background: "#ECEADE" }) }}>
-                  <span style={{ position: "absolute", bottom: "-10px", right: "-4px",
-                    fontSize: "52px", lineHeight: 1, fontWeight: 900,
-                    color: gradeTab === i ? "#F6E27F" : "#C8C0A8",
-                    opacity: gradeTab === i ? 0.5 : 0.35,
-                    fontFamily: "Georgia, serif", userSelect: "none" }}>❝</span>
+                  <img src="/TheFluent/logo.symbol.clear.png" alt=""
+                    style={{ position: "absolute", width: "52px", height: "52px", objectFit: "contain",
+                      bottom: "-6px", right: "-6px", opacity: gradeTab === i ? 0.55 : 0.3 }} />
                   <div style={{ position: "relative", zIndex: 1, lineHeight: 1 }}>
                     <div style={{ fontSize: "20px", fontWeight: 900, color: gradeTab === i ? "#F6E27F" : "#888888" }}>{r.name.replace("학년", "")}</div>
                     <div style={{ fontSize: "9px", fontWeight: 800, marginTop: "2px", color: gradeTab === i ? "rgba(246,226,127,0.7)" : "#AAAAAA" }}>학년</div>
