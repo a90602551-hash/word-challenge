@@ -298,6 +298,14 @@ function ChallengePageInner() {
 
   // ── 단어장 선택 ──
   if (screen === "select-set") {
+    // startSet 파라미터가 있으면 로딩 중 (자동 선택 대기)
+    if (searchParams.get("startSet")) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 flex items-center justify-center">
+          <p className="text-white text-xl font-bold animate-pulse">학습 준비 중... ✨</p>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 px-4 py-8">
         <div className="max-w-lg mx-auto">
