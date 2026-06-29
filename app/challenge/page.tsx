@@ -126,12 +126,12 @@ function ChallengePageInner() {
       const ids: number[] = JSON.parse(progress.wordOrder);
       const wordMap = new Map(words.map(w => [w.id, w]));
       const restored = ids.map(id => wordMap.get(id)).filter(Boolean) as Word[];
-      // 저장된 순서에 없는 새 단어는 뒤에 추가
       const missing = words.filter(w => !ids.includes(w.id));
       ordered = [...restored, ...missing];
       startBatch = progress.batchIdx ?? 0;
     } else {
-      ordered = shuffle(words);
+      // 그룹 구성은 항상 고정 순서 (DB 순서 그대로)
+      ordered = [...words];
     }
 
     const bs: Word[][] = [];
