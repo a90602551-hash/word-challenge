@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 function speak(text: string) {
@@ -34,7 +34,7 @@ function getChoices(correct: Word, allWords: Word[], type: "english" | "korean")
   return shuffle([type === "english" ? correct.english : correct.korean, ...distractors]);
 }
 
-export default function ChallengePage() {
+function ChallengePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [wordSets, setWordSets]       = useState<WordSet[]>([]);
@@ -802,5 +802,13 @@ function FlashCards({ batch, batchIdx, totalBatches, selectedSet, onExit, onDone
         .animate-shake { animation: shake 0.45s ease; }
       `}</style>
     </div>
+  );
+}
+
+export default function ChallengePage() {
+  return (
+    <Suspense>
+      <ChallengePageInner />
+    </Suspense>
   );
 }
