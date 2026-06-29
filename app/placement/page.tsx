@@ -169,9 +169,6 @@ export default function PlacementPage() {
             className="w-full py-4 rounded-2xl text-white font-extrabold text-lg bg-gradient-to-r from-amber-400 to-orange-500 shadow-lg">
             테스트 시작! 🚀
           </button>
-          <button onClick={() => router.push("/challenge")} className="mt-3 text-gray-400 text-sm hover:text-gray-600">
-            건너뛰고 직접 선택할게요
-          </button>
         </div>
       </div>
     );
@@ -276,10 +273,6 @@ export default function PlacementPage() {
                 {recommended.emoji} {recommended.name}으로 시작! →
               </button>
             )}
-            <button onClick={() => router.push("/challenge")}
-              className="w-full py-3 rounded-2xl border-2 border-gray-200 text-gray-500 font-bold text-sm">
-              내가 직접 학년 선택할게요
-            </button>
           </div>
         </div>
       </div>
