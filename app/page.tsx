@@ -105,11 +105,18 @@ export default function MainPage() {
             <div className="grid gap-2 mb-5" style={{ gridTemplateColumns: `repeat(${Math.max(rankings.length, 1)}, 1fr)` }}>
               {rankings.map((r, i) => (
                 <button key={r.wordSetId} onClick={() => setGradeTab(i)}
-                  className="py-2 rounded-xl text-xs font-extrabold transition-all"
-                  style={gradeTab === i
-                    ? { background: "#1F2A44", color: "#F6E27F" }
-                    : { background: "#F5F5F5", color: "#AAAAAA" }}>
-                  {r.emoji} {r.name}
+                  className="rounded-xl font-extrabold transition-all"
+                  style={{ position: "relative", height: "60px", overflow: "hidden",
+                    ...(gradeTab === i
+                      ? { background: "#1F2A44" }
+                      : { background: "#F5F5F5" }) }}>
+                  <img src="/TheFluent/logo.symbol.png" alt=""
+                    style={{ position: "absolute", width: "52px", height: "52px", objectFit: "contain",
+                      bottom: "-6px", right: "-6px", opacity: gradeTab === i ? 0.18 : 0.07 }} />
+                  <div style={{ position: "relative", zIndex: 1, lineHeight: 1 }}>
+                    <div style={{ fontSize: "20px", fontWeight: 900, color: gradeTab === i ? "#F6E27F" : "#CCCCCC" }}>{r.name.replace("학년", "")}</div>
+                    <div style={{ fontSize: "9px", fontWeight: 800, marginTop: "2px", color: gradeTab === i ? "rgba(246,226,127,0.7)" : "#DDDDDD" }}>학년</div>
+                  </div>
                 </button>
               ))}
             </div>
