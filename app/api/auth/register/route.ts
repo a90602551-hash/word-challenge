@@ -5,7 +5,7 @@ import { signStudentToken, STUDENT_COOKIE } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
-    const { name, username: rawUsername, password, avatar } = await req.json();
+    const { name, username: rawUsername, password, avatar, isEnrolled } = await req.json();
     const username = rawUsername?.trim() ?? "";
     const cleanName = name?.trim() ?? "";
 
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const student = await prisma.student.create({
-      data: { name: cleanName, username, passwordHash, avatar: avatar || "🐥" },
+      data: { name: cleanName, username, passwordHash, avatar: avatar || "🐥", isEnrolled: isEnrolled !== false },
     });
 
     const token = await signStudentToken(student.id);

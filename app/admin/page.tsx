@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
 
-interface Student  { id: number; name: string; username: string; avatar: string; approved: boolean; createdAt: string; }
+interface Student  { id: number; name: string; username: string; avatar: string; approved: boolean; isEnrolled: boolean; createdAt: string; }
 interface WordSet   { id: number; name: string; emoji: string; description: string; _count: { words: number }; }
 interface Word      { id: number; english: string; korean: string; }
 interface ScoreRow  { id: number; studentId: number; wordSetId: number | null; score: number; totalQuestions: number; createdAt: string; }
@@ -248,7 +248,7 @@ export default function AdminPage() {
                       <span className="text-2xl">{s.avatar}</span>
                       <div className="flex-1">
                         <p className="font-bold text-gray-800">{s.name}</p>
-                        <p className="text-xs text-gray-400">아이디: {s.username} · 가입일: {new Date(s.createdAt).toLocaleDateString("ko-KR")}</p>
+                        <p className="text-xs text-gray-400">아이디: {s.username} · {s.isEnrolled ? "🏫 재원생" : "🏠 비재원생"} · 가입일: {new Date(s.createdAt).toLocaleDateString("ko-KR")}</p>
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => approveStudent(s.id, true)}
@@ -317,7 +317,8 @@ export default function AdminPage() {
                       <span className="text-2xl">{s.avatar}</span>
                       <div className="flex-1">
                         <p className="font-bold text-gray-800">{s.name}
-                          {!s.approved && <span className="ml-2 text-xs bg-amber-100 text-amber-600 font-bold px-2 py-0.5 rounded-full">미승인</span>}
+                          <span className="ml-2 text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{s.isEnrolled ? "🏫 재원" : "🏠 비재원"}</span>
+                          {!s.approved && <span className="ml-1 text-xs bg-amber-100 text-amber-600 font-bold px-2 py-0.5 rounded-full">미승인</span>}
                         </p>
                         <p className="text-xs text-gray-400">아이디: {s.username}</p>
                       </div>

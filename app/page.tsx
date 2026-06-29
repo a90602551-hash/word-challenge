@@ -19,6 +19,7 @@ export default function MainPage() {
   const [password, setPassword] = useState("");
   const [name, setName]         = useState("");
   const [avatar, setAvatar]     = useState("🐥");
+  const [isEnrolled, setIsEnrolled] = useState(true);
   const [error, setError]       = useState("");
   const [loading, setLoading]   = useState(false);
   const [rankings, setRankings] = useState<GradeRanking[]>([]);
@@ -55,7 +56,7 @@ export default function MainPage() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, username, password, avatar }),
+      body: JSON.stringify({ name, username, password, avatar, isEnrolled }),
     });
     const data = await res.json();
     setLoading(false);
@@ -196,6 +197,19 @@ export default function MainPage() {
                 <input type="password" value={password} onChange={e => setPassword(e.target.value)} required
                   placeholder="비밀번호 (4자 이상)"
                   className="w-full border-2 border-gray-200 focus:border-purple-400 rounded-2xl px-4 py-3 text-lg outline-none transition-all" />
+              </div>
+              <div>
+                <label className="text-sm font-bold text-gray-500 mb-2 block">재원 여부</label>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setIsEnrolled(true)}
+                    className={`flex-1 py-3 rounded-2xl font-extrabold text-sm transition-all border-2 ${isEnrolled ? "bg-violet-500 text-white border-violet-500" : "bg-gray-50 text-gray-400 border-gray-200"}`}>
+                    🏫 재원생
+                  </button>
+                  <button type="button" onClick={() => setIsEnrolled(false)}
+                    className={`flex-1 py-3 rounded-2xl font-extrabold text-sm transition-all border-2 ${!isEnrolled ? "bg-indigo-500 text-white border-indigo-500" : "bg-gray-50 text-gray-400 border-gray-200"}`}>
+                    🏠 비재원생
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="text-sm font-bold text-gray-500 mb-2 block">나를 나타낼 아바타 고르기</label>

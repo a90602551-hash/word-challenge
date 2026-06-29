@@ -24,6 +24,7 @@ model Student {
   passwordHash    String           @default("")
   avatar          String           @default("🐥")
   approved        Boolean          @default(false)
+  isEnrolled      Boolean          @default(true)
   challengeScores   ChallengeScore[]
   learningProgress  LearningProgress[]
   createdAt       DateTime         @default(now())
