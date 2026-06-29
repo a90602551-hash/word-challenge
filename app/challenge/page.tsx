@@ -447,6 +447,7 @@ function ChallengePageInner() {
           </form>
         </div>
 
+        <StepBar currentStep={3} />
         <style>{`
           @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
           .animate-shake { animation: shake 0.45s ease; }
@@ -677,6 +678,9 @@ function ChallengePageInner() {
           </form>
         )}
       </div>
+
+      {/* 하단 단계 진행바 */}
+      <StepBar currentStep={isMTW ? 1 : isWTM ? 2 : 4} />
     </div>
   );
 }
@@ -833,10 +837,48 @@ function FlashCards({ batch, batchIdx, totalBatches, selectedSet, onExit, onDone
         )}
       </div>
 
+      {/* 하단 단계 진행바 */}
+      <StepBar currentStep={0} dark />
+
       <style>{`
         @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(6px)} }
         .animate-shake { animation: shake 0.45s ease; }
       `}</style>
+    </div>
+  );
+}
+
+// currentStep: 0=외우기, 1=뜻→단어, 2=단어→뜻, 3=따라쓰기, 4=타이핑
+function StepBar({ currentStep, dark }: { currentStep: number; dark?: boolean }) {
+  const steps = [
+    { label: "외우기", icon: "📖" },
+    { label: "뜻→단어", icon: "❓" },
+    { label: "단어→뜻", icon: "❓" },
+    { label: "따라쓰기", icon: "✏️" },
+    { label: "타이핑", icon: "⌨️" },
+  ];
+  return (
+    <div className="px-4 pb-5 pt-3">
+      <div className="max-w-sm mx-auto flex gap-1">
+        {steps.map((s, i) => {
+          const done    = i < currentStep;
+          const current = i === currentStep;
+          return (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+              <div className={`h-2 w-full rounded-full transition-all duration-300 ${
+                done    ? (dark ? "bg-white/80" : "bg-violet-400") :
+                current ? (dark ? "bg-white" : "bg-violet-600") :
+                          (dark ? "bg-white/20" : "bg-gray-200")
+              }`} />
+              <span className={`text-[9px] font-bold leading-none ${
+                done    ? (dark ? "text-white/70" : "text-violet-400") :
+                current ? (dark ? "text-white" : "text-violet-700") :
+                          (dark ? "text-white/25" : "text-gray-300")
+              }`}>{s.icon} {s.label}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
