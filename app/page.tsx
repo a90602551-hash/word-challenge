@@ -38,7 +38,14 @@ export default function MainPage() {
     });
     const data = await res.json();
     setLoading(false);
-    if (!res.ok) { setError(data.error); return; }
+    if (!res.ok) {
+      if (data.error === "pending") {
+        setError("⏳ 선생님 승인 대기 중이에요! 곧 이용할 수 있어요 😊");
+      } else {
+        setError(data.error);
+      }
+      return;
+    }
     router.push("/challenge");
   }
 

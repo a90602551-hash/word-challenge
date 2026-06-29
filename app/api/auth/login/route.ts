@@ -17,6 +17,9 @@ export async function POST(req: Request) {
     if (!ok)
       return NextResponse.json({ error: "비밀번호가 틀렸어요" }, { status: 401 });
 
+    if (!student.approved)
+      return NextResponse.json({ error: "pending" }, { status: 403 });
+
     const token = await signStudentToken(student.id);
     const res = NextResponse.json({ student: { id: student.id, name: student.name, avatar: student.avatar } });
     res.cookies.set(STUDENT_COOKIE, token, { httpOnly: true, path: "/", maxAge: 60 * 60 * 24 * 30, sameSite: "lax" });

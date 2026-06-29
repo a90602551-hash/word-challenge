@@ -3,18 +3,18 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
 
-interface Student  { id: number; name: string; username: string; avatar: string; }
+interface Student  { id: number; name: string; username: string; avatar: string; approved: boolean; createdAt: string; }
 interface WordSet   { id: number; name: string; emoji: string; description: string; _count: { words: number }; }
 interface Word      { id: number; english: string; korean: string; }
 interface ScoreRow  { id: number; studentId: number; wordSetId: number | null; score: number; totalQuestions: number; createdAt: string; }
 interface ProgressRow { studentId: number; wordSetId: number; batchIdx: number; }
 
 const AVATARS = ["🐥", "🐶", "🐱", "🐰", "🐻", "🦊", "🐸", "🐧", "🦄", "🐯", "🐼", "🐨"];
-type Tab = "students" | "words" | "results";
+type Tab = "pending" | "students" | "words" | "results";
 
 export default function AdminPage() {
   const router = useRouter();
-  const [tab, setTab]               = useState<Tab>("students");
+  const [tab, setTab]               = useState<Tab>("pending");
   const [students, setStudents]     = useState<Student[]>([]);
   const [wordSets, setWordSets]     = useState<WordSet[]>([]);
   const [scores, setScores]         = useState<ScoreRow[]>([]);
@@ -84,6 +84,15 @@ export default function AdminPage() {
     const data = await res.json();
     if (!res.ok) { setSError(data.error); return; }
     setSName(""); setSUsername(""); setSPassword(""); setSAvatar("🐥");
+    loadStudents();
+  }
+
+  async function approveStudent(id: number, approved: boolean) {
+    await fetch(`/api/students/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ approved }),
+    });
     loadStudents();
   }
 
@@ -204,15 +213,61 @@ export default function AdminPage() {
 
       {/* 탭 */}
       <div className="flex border-b bg-white px-6 gap-6">
-        {(["students", "words", "results"] as Tab[]).map(t => (
-          <button key={t} onClick={() => { setTab(t); if (t === "results") loadResults(); }}
-            className={`py-3 font-bold text-sm transition-all border-b-2 ${tab === t ? "border-slate-700 text-slate-800" : "border-transparent text-gray-400"}`}>
-            {t === "students" ? "👥 학생 관리" : t === "words" ? "📚 단어장 관리" : "📊 학습 결과"}
-          </button>
-        ))}
+        {(["pending", "students", "words", "results"] as Tab[]).map(t => {
+          const pendingCount = students.filter(s => !s.approved).length;
+          return (
+            <button key={t} onClick={() => { setTab(t); if (t === "results") loadResults(); }}
+              className={`py-3 font-bold text-sm transition-all border-b-2 relative ${tab === t ? "border-slate-700 text-slate-800" : "border-transparent text-gray-400"}`}>
+              {t === "pending" ? "⏳ 승인 대기" : t === "students" ? "👥 학생 관리" : t === "words" ? "📚 단어장 관리" : "📊 학습 결과"}
+              {t === "pending" && pendingCount > 0 && (
+                <span className="ml-1.5 bg-red-500 text-white text-xs font-extrabold px-1.5 py-0.5 rounded-full">{pendingCount}</span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6">
+        {/* ── 승인 대기 ── */}
+        {tab === "pending" && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b flex items-center justify-between">
+                <h2 className="font-extrabold text-gray-800">⏳ 가입 승인 대기</h2>
+                <span className="text-sm text-gray-400">승인해야 학생이 앱을 이용할 수 있어요</span>
+              </div>
+              {students.filter(s => !s.approved).length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <div className="text-4xl mb-2">✅</div>
+                  <p>대기 중인 학생이 없어요!</p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {students.filter(s => !s.approved).map(s => (
+                    <div key={s.id} className="px-5 py-4 flex items-center gap-3">
+                      <span className="text-2xl">{s.avatar}</span>
+                      <div className="flex-1">
+                        <p className="font-bold text-gray-800">{s.name}</p>
+                        <p className="text-xs text-gray-400">아이디: {s.username} · 가입일: {new Date(s.createdAt).toLocaleDateString("ko-KR")}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => approveStudent(s.id, true)}
+                          className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-emerald-600">
+                          ✅ 승인
+                        </button>
+                        <button onClick={() => deleteStudent(s.id)}
+                          className="bg-red-100 text-red-500 px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-200">
+                          ❌ 거절
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ── 학생 관리 ── */}
         {tab === "students" && (
           <div className="space-y-6">
@@ -261,7 +316,9 @@ export default function AdminPage() {
                     <div key={s.id} className="px-5 py-3 flex items-center gap-3">
                       <span className="text-2xl">{s.avatar}</span>
                       <div className="flex-1">
-                        <p className="font-bold text-gray-800">{s.name}</p>
+                        <p className="font-bold text-gray-800">{s.name}
+                          {!s.approved && <span className="ml-2 text-xs bg-amber-100 text-amber-600 font-bold px-2 py-0.5 rounded-full">미승인</span>}
+                        </p>
                         <p className="text-xs text-gray-400">아이디: {s.username}</p>
                       </div>
                       {pwStudentId === s.id ? (

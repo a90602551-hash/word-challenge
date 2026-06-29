@@ -10,7 +10,7 @@ export async function GET(req: Request) {
 
   const students = await prisma.student.findMany({
     orderBy: { createdAt: "asc" },
-    select: { id: true, name: true, username: true, avatar: true, createdAt: true },
+    select: { id: true, name: true, username: true, avatar: true, approved: true, createdAt: true },
   });
   return NextResponse.json(students);
 }
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const student = await prisma.student.create({
-      data: { name, username, passwordHash, avatar: avatar || "🐥" },
+      data: { name, username, passwordHash, avatar: avatar || "🐥", approved: true },
     });
     return NextResponse.json(student, { status: 201 });
   } catch {

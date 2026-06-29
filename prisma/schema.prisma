@@ -23,6 +23,7 @@ model Student {
   username        String           @unique
   passwordHash    String           @default("")
   avatar          String           @default("🐥")
+  approved        Boolean          @default(false)
   challengeScores   ChallengeScore[]
   learningProgress  LearningProgress[]
   createdAt       DateTime         @default(now())
