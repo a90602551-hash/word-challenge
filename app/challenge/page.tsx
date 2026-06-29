@@ -4,11 +4,27 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 function speak(text: string) {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
+  const synth = window.speechSynthesis;
+  synth.cancel();
+
   const utt = new SpeechSynthesisUtterance(text);
   utt.lang = "en-US";
-  utt.rate = 0.9;
-  window.speechSynthesis.speak(utt);
+  utt.rate = 0.85;
+
+  const doSpeak = () => {
+    const voices = synth.getVoices();
+    const voice = voices.find(v => v.lang.startsWith("en-US"))
+               || voices.find(v => v.lang.startsWith("en"));
+    if (voice) utt.voice = voice;
+    synth.speak(utt);
+  };
+
+  if (synth.getVoices().length > 0) {
+    doSpeak();
+  } else {
+    synth.addEventListener("voiceschanged", doSpeak, { once: true });
+    setTimeout(doSpeak, 300);
+  }
 }
 
 interface WordSet { id: number; name: string; emoji: string; description: string; _count: { words: number }; }
