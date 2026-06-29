@@ -152,7 +152,7 @@ export default function PlacementPage() {
       localStorage.setItem("wc_placed_id", String(wsId));
       localStorage.setItem("wc_unlocked_idx", String(idx));
     }
-    router.push(`/challenge?startSet=${wsId}`);
+    router.replace(`/challenge?startSet=${wsId}`);
   }
 
   // ── 인트로 ──
