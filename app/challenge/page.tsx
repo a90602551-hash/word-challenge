@@ -749,7 +749,6 @@ function FlashCards({ batch, batchIdx, totalBatches, selectedSet, onExit, onDone
     setPhase("showing");
     setWrongSet(new Set());
     setShake(false);
-    setTimeout(() => speak(word.english), 150);
   }, [cardIdx, batch]);
 
   useEffect(() => {

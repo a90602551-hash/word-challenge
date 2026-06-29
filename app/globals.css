@@ -31,3 +31,19 @@ body {
 .bounce-in { animation: bounce-in 0.35s ease both; }
 .shake { animation: shake 0.4s ease; }
 .pop { animation: pop 0.25s ease; }
+
+/* 메인 페이지 반응형 */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 768px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+  .main-header-logo {
+    height: 64px !important;
+  }
+}

@@ -95,7 +95,7 @@ export default function MainPage() {
         </div>
 
         {/* 2단 레이아웃 */}
-        <div className="grid gap-5" style={{ gridTemplateColumns: "1fr 360px", alignItems: "start" }}>
+        <div className="main-grid">
 
           {/* 왼쪽: 순위판 */}
           <div className="rounded-3xl p-6 bg-white" style={{ border: "1.5px solid #F0E8C8", boxShadow: "0 2px 12px rgba(246,226,127,0.2)" }}>
