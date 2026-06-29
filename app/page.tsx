@@ -96,46 +96,85 @@ export default function MainPage() {
             </div>
 
             {currentRanking && (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-4">
                 {/* 학습량 */}
-                <div className="bg-white/20 rounded-2xl p-3">
-                  <p className="text-xs font-bold text-center text-purple-100 mb-2">⚡ 학습량 Top 3</p>
+                <div>
+                  <p className="text-xs font-extrabold text-purple-200 mb-2">⚡ 학습량 Top 3</p>
                   {currentRanking.volumeTop3.length === 0 ? (
-                    <p className="text-center text-xs text-purple-200 py-2">아직 기록이 없어요!</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {currentRanking.volumeTop3.map(entry => (
-                        <div key={entry.student?.id} className="flex items-center gap-2">
-                          <span className="text-base">{RANK_MEDALS[entry.rank - 1]}</span>
-                          <span className="text-lg">{entry.student?.avatar}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-sm truncate">{entry.student?.name}</p>
-                            <p className="text-xs text-purple-200">{entry.sessions}회 도전</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                    <p className="text-center text-xs text-purple-300 py-2">아직 기록이 없어요!</p>
+                  ) : (() => {
+                    const max = currentRanking.volumeTop3[0]?.sessions ?? 1;
+                    const barColors = ["bg-yellow-300", "bg-gray-300", "bg-amber-600"];
+                    return (
+                      <div className="space-y-2">
+                        {currentRanking.volumeTop3.map((entry, i) => {
+                          const pct = Math.round((entry.sessions / max) * 100);
+                          const gap = i > 0 ? entry.sessions - currentRanking.volumeTop3[i-1].sessions : 0;
+                          return (
+                            <div key={entry.student?.id}>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-base w-5">{RANK_MEDALS[i]}</span>
+                                <span className="text-base">{entry.student?.avatar}</span>
+                                <span className="font-bold text-sm text-white flex-1 truncate">{entry.student?.name}</span>
+                                <span className="text-xs font-extrabold text-yellow-300">{entry.sessions}회</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="w-5 shrink-0" />
+                                <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden">
+                                  <div className={`h-full rounded-full transition-all duration-700 ${barColors[i]}`}
+                                    style={{ width: `${pct}%` }} />
+                                </div>
+                              </div>
+                              {i > 0 && gap < 0 && (
+                                <p className="text-[10px] text-purple-300 mt-0.5 ml-7">1위와 {Math.abs(gap)}회 차이</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
+
+                <div className="border-t border-white/10" />
+
                 {/* 성적 */}
-                <div className="bg-white/20 rounded-2xl p-3">
-                  <p className="text-xs font-bold text-center text-purple-100 mb-2">⭐ 성적 Top 3</p>
+                <div>
+                  <p className="text-xs font-extrabold text-purple-200 mb-2">⭐ 성적 Top 3</p>
                   {currentRanking.scoreTop3.length === 0 ? (
-                    <p className="text-center text-xs text-purple-200 py-2">아직 기록이 없어요!</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {currentRanking.scoreTop3.map(entry => (
-                        <div key={entry.student?.id} className="flex items-center gap-2">
-                          <span className="text-base">{RANK_MEDALS[entry.rank - 1]}</span>
-                          <span className="text-lg">{entry.student?.avatar}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-sm truncate">{entry.student?.name}</p>
-                            <p className="text-xs text-purple-200">평균 {entry.avgAccuracy}%</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                    <p className="text-center text-xs text-purple-300 py-2">아직 기록이 없어요!</p>
+                  ) : (() => {
+                    const max = currentRanking.scoreTop3[0]?.avgAccuracy ?? 1;
+                    const barColors = ["bg-yellow-300", "bg-gray-300", "bg-amber-600"];
+                    return (
+                      <div className="space-y-2">
+                        {currentRanking.scoreTop3.map((entry, i) => {
+                          const pct = Math.round((entry.avgAccuracy / max) * 100);
+                          const gap = i > 0 ? entry.avgAccuracy - currentRanking.scoreTop3[i-1].avgAccuracy : 0;
+                          return (
+                            <div key={entry.student?.id}>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-base w-5">{RANK_MEDALS[i]}</span>
+                                <span className="text-base">{entry.student?.avatar}</span>
+                                <span className="font-bold text-sm text-white flex-1 truncate">{entry.student?.name}</span>
+                                <span className="text-xs font-extrabold text-yellow-300">{entry.avgAccuracy}%</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="w-5 shrink-0" />
+                                <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden">
+                                  <div className={`h-full rounded-full transition-all duration-700 ${barColors[i]}`}
+                                    style={{ width: `${pct}%` }} />
+                                </div>
+                              </div>
+                              {i > 0 && gap < 0 && (
+                                <p className="text-[10px] text-purple-300 mt-0.5 ml-7">1위와 {Math.abs(gap)}% 차이</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             )}
