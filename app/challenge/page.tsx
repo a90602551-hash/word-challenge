@@ -819,7 +819,7 @@ function FlashCards({ batch, batchIdx, totalBatches, selectedSet, onExit, onDone
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center px-5 pt-6 pb-4 gap-5">
+      <div className="flex-1 flex flex-col items-center px-5 pt-6 pb-24 gap-5" style={{ overflowY: "auto" }}>
 
         {/* 보기 단계 */}
         {phase === "showing" && (
