@@ -387,7 +387,7 @@ function ChallengePageInner() {
               if (isLocked) {
                 return (
                   <div key={ws.id} style={{ position: "relative", background: "#F5F5F5", border: "1.5px solid #E8E8E8", borderRadius: "20px", padding: "20px", overflow: "hidden", cursor: "not-allowed", opacity: 0.55 }}>
-                    <img src="/TheFluent/logo.symbol.png" alt="" style={{ position: "absolute", width: "60px", height: "60px", objectFit: "contain", bottom: "-8px", right: "-6px", opacity: 0.06, filter: "grayscale(1)" }} />
+                    <img src="/TheFluent/logo.symbol.clear.png" alt="" style={{ position: "absolute", width: "60px", height: "60px", objectFit: "contain", bottom: "-8px", right: "-6px", opacity: 0.06, filter: "grayscale(1)" }} />
                     <span style={{ position: "absolute", top: "12px", right: "12px", fontSize: "16px" }}>🔒</span>
                     <div style={{ display: "flex", alignItems: "baseline", gap: "3px", marginBottom: "4px" }}>
                       <span style={{ fontSize: "28px", fontWeight: 900, color: "#CCCCCC", lineHeight: 1 }}>{gradeNum}</span>
@@ -406,7 +406,7 @@ function ChallengePageInner() {
                 <button key={ws.id} onClick={() => selectSet(ws)}
                   style={{ position: "relative", background: "#fff", border: isRecommended ? "2px solid #F6E27F" : "1.5px solid #F0E8C8", borderRadius: "20px", padding: "20px", overflow: "hidden", textAlign: "left", transition: "transform 0.15s", cursor: "pointer" }}
                   className="hover:scale-105 active:scale-95">
-                  <img src="/TheFluent/logo.symbol.png" alt="" style={{ position: "absolute", width: "60px", height: "60px", objectFit: "contain", bottom: "-8px", right: "-6px", opacity: isRecommended ? 0.16 : 0.08 }} />
+                  <img src="/TheFluent/logo.symbol.clear.png" alt="" style={{ position: "absolute", width: "60px", height: "60px", objectFit: "contain", bottom: "-8px", right: "-6px", opacity: isRecommended ? 0.16 : 0.08 }} />
                   {isRecommended && (
                     <span style={{ position: "absolute", top: "10px", right: "10px", fontSize: "9px", background: "#F6E27F", color: "#1F2A44", borderRadius: "999px", padding: "2px 8px", fontWeight: 900 }}>추천!</span>
                   )}
@@ -795,7 +795,7 @@ function FlashCards({ batch, batchIdx, totalBatches, selectedSet, onExit, onDone
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             {/* 학년 심볼 */}
             <div style={{ position: "relative", width: "36px", height: "36px" }}>
-              <img src="/TheFluent/logo.symbol.png" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", opacity: 0.5 }} />
+              <img src="/TheFluent/logo.symbol.clear.png" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", opacity: 0.5 }} />
               <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "15px", fontWeight: 900, color: "#F6E27F", zIndex: 1 }}>{gradeNum}</span>
             </div>
             <div>
