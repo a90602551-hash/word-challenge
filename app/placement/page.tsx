@@ -135,10 +135,10 @@ export default function PlacementPage() {
         borderRadius: "14px", padding: "12px 14px",
         display: "flex", alignItems: "center", gap: "12px", overflow: "hidden",
       }}>
-        <img src="/TheFluent/logo.symbol.png" alt="" style={{
+        <img src="/TheFluent/logo.symbol.clear.png" alt="" style={{
           position: "absolute", width: "52px", height: "52px",
           objectFit: "contain", bottom: "-6px", right: "-4px",
-          opacity: isRec ? 0.15 : 0.07,
+          opacity: isRec ? 0.5 : 0.25,
         }} />
         <div style={{ position: "relative", zIndex: 1, textAlign: "center", minWidth: "30px" }}>
           <div style={{ fontSize: "18px", fontWeight: 900, color: isRec ? "#1F2A44" : "#CCCCCC", lineHeight: 1 }}>{gradeNum}</div>
@@ -165,7 +165,7 @@ export default function PlacementPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "#FFF9E6" }}>
         <div className="w-full max-w-sm text-center" style={{ background: "#fff", borderRadius: "24px", border: "1.5px solid #F0E8C8", padding: "32px 28px", boxShadow: "0 2px 16px rgba(246,226,127,0.2)" }}>
-          <img src="/TheFluent/logo.clear.png" alt="The Fluent" style={{ height: "48px", objectFit: "contain", margin: "0 auto 20px", display: "block" }} />
+          <img src="/TheFluent/logo.clear.png" alt="The Fluent" style={{ height: "72px", objectFit: "contain", margin: "0 auto 20px", display: "block" }} />
           <div className="text-5xl mb-3">🎯</div>
           <h1 className="text-2xl font-black mb-2" style={{ color: "#1F2A44" }}>레벨 테스트</h1>
           <p className="text-sm mb-6" style={{ color: "#8A96A8", lineHeight: 1.7 }}>나에게 딱 맞는 학년을<br />찾아드릴게요! 😊</p>
