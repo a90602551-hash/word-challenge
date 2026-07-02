@@ -97,6 +97,12 @@ export default function PlacementPage() {
         setSelected(null);
         setIsCorrect(null);
       } else {
+        // 퀴즈 완료 즉시 서버에 완료 기록 저장 (isFirst=false 처리)
+        fetch("/api/challenge/score", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ score: 1, totalQuestions: 1, mode: "PLACEMENT", wordSetId: null }),
+        }).catch(() => {});
         setPhase("result");
       }
     }, isPass ? 100 : 700);
@@ -122,12 +128,6 @@ export default function PlacementPage() {
       localStorage.setItem("wc_placed_id", String(wsId));
       localStorage.setItem("wc_unlocked_idx", String(idx));
     }
-    // 배치테스트 완료 기록 저장 → isFirst=false 처리
-    await fetch("/api/challenge/score", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ score: 0, totalQuestions: 0, mode: "PLACEMENT", wordSetId: wsId }),
-    }).catch(() => {});
     router.replace(`/challenge?startSet=${wsId}`);
   }
 
