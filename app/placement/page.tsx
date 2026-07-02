@@ -80,9 +80,10 @@ export default function PlacementPage() {
   function handleChoice(choice: string) {
     if (selected !== null) return;
     const q = questions[qIdx];
-    const ok = choice === q.word.english;
-    setSelected(choice);
-    setIsCorrect(ok);
+    const isPass = choice === "__pass__";
+    const ok = !isPass && choice === q.word.english;
+    setSelected(isPass ? "" : choice);
+    setIsCorrect(isPass ? false : ok);
     setScores(prev => ({
       ...prev,
       [q.wordSetId]: {
@@ -98,7 +99,7 @@ export default function PlacementPage() {
       } else {
         setPhase("result");
       }
-    }, 700);
+    }, isPass ? 100 : 700);
   }
 
   useEffect(() => {
@@ -200,14 +201,13 @@ export default function PlacementPage() {
       <div className="min-h-screen flex flex-col" style={{ background: "#FFF9E6" }}>
         {/* 남색 헤더 */}
         <div style={{ background: "#1F2A44", padding: "16px 20px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-            <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)" }}>{q.wordSetEmoji} {q.wordSetName} · {gradeQIdx + 1}/{QUESTIONS_PER_GRADE}문제</div>
-            <div style={{ fontSize: "11px", color: "#F6E27F", fontWeight: 800 }}>{qIdx + 1} / {questions.length}</div>
+          <div style={{ textAlign: "center", marginBottom: "10px" }}>
+            <div style={{ fontSize: "13px", fontWeight: 900, color: "#F6E27F" }}>🔍 최고의 시작 레벨을 찾는 중이에요!</div>
+            <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.4)", marginTop: "3px" }}>{q.wordSetEmoji} {q.wordSetName} · {gradeQIdx + 1}/{QUESTIONS_PER_GRADE}문제 · 전체 {qIdx + 1}/{questions.length}</div>
           </div>
           <div style={{ height: "6px", background: "rgba(255,255,255,0.15)", borderRadius: "999px", overflow: "hidden" }}>
             <div style={{ width: `${progress}%`, height: "100%", background: "#F6E27F", borderRadius: "999px", transition: "width 0.5s" }} />
           </div>
-          <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", textAlign: "center", marginTop: "8px" }}>레벨 테스트</div>
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-5 gap-5">
@@ -239,6 +239,15 @@ export default function PlacementPage() {
               );
             })}
           </div>
+
+          {/* 패스 버튼 */}
+          {selected === null && (
+            <button onClick={() => handleChoice("__pass__")}
+              className="w-full max-w-sm py-3 rounded-2xl font-bold text-sm transition-all active:scale-95"
+              style={{ background: "transparent", border: "1.5px solid #D8D0B8", color: "#AAAAAA" }}>
+              🤷 모르겠어요 패스!
+            </button>
+          )}
         </div>
       </div>
     );
