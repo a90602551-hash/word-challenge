@@ -165,7 +165,7 @@ export default function PlacementPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "#FFF9E6" }}>
         <div className="w-full max-w-sm text-center" style={{ background: "#fff", borderRadius: "24px", border: "1.5px solid #F0E8C8", padding: "32px 28px", boxShadow: "0 2px 16px rgba(246,226,127,0.2)" }}>
-          <img src="/TheFluent/logo.clear.png" alt="The Fluent" style={{ height: "72px", objectFit: "contain", margin: "0 auto 20px", display: "block" }} />
+          <img src="/TheFluent/logo.clear.png" alt="The Fluent" style={{ height: "130px", objectFit: "contain", margin: "0 auto 24px", display: "block" }} />
           <div className="text-5xl mb-3">🎯</div>
           <h1 className="text-2xl font-black mb-2" style={{ color: "#1F2A44" }}>레벨 테스트</h1>
           <p className="text-sm mb-6" style={{ color: "#8A96A8", lineHeight: 1.7 }}>나에게 딱 맞는 학년을<br />찾아드릴게요! 😊</p>

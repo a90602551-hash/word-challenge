@@ -229,7 +229,7 @@ export default function AdminPage() {
       {/* 남색 헤더 */}
       <div style={{ background: "#1F2A44", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <img src="/TheFluent/logo.clear.png" alt="The Fluent" style={{ height: "32px", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
+          <img src="/TheFluent/logo.clear.png" alt="The Fluent" style={{ height: "44px", objectFit: "contain", filter: "brightness(0) invert(1)" }} />
           <div style={{ width: "1px", height: "22px", background: "rgba(255,255,255,0.15)" }} />
           <span style={{ fontSize: "14px", fontWeight: 900, color: "#F6E27F" }}>선생님 관리페이지</span>
         </div>

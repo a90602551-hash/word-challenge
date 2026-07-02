@@ -84,7 +84,7 @@ export default function MainPage() {
         {/* 헤더 */}
         <div className="main-header flex items-center justify-between mb-8" style={{ gap: "20px" }}>
           <div className="flex items-center" style={{ gap: "16px" }}>
-            <img src="/TheFluent/logo.clear.png" alt="The Fluent" style={{ height: "80px", objectFit: "contain", flexShrink: 0 }} />
+            <img src="/TheFluent/logo.clear.png" alt="The Fluent" style={{ height: "120px", objectFit: "contain", flexShrink: 0 }} />
             <div className="main-divider" style={{ width: "1px", height: "40px", background: "#E0D8C0" }} />
             <div>
               <h1 className="main-header-title font-black" style={{ color: "#1F2A44", lineHeight: 1.1, fontSize: "24px" }}>단어 챌린지</h1>

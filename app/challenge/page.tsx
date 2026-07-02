@@ -360,7 +360,7 @@ function ChallengePageInner() {
           {/* 헤더 */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <img src="/TheFluent/logo.clear.png" alt="The Fluent" style={{ height: "56px", objectFit: "contain" }} />
+              <img src="/TheFluent/logo.clear.png" alt="The Fluent" style={{ height: "80px", objectFit: "contain" }} />
               <div>
                 <div className="font-black text-sm" style={{ color: "#1F2A44" }}>단어 챌린지</div>
                 <div className="text-xs" style={{ color: "#76C043" }}>학년을 선택해요!</div>
