@@ -92,6 +92,8 @@ function ChallengePageInner() {
   const [copyIdx, setCopyIdx]         = useState(0);
   const [copyTyped, setCopyTyped]     = useState("");
   const [copyOk, setCopyOk]           = useState<boolean | null>(null);
+  const [myName, setMyName]           = useState<string | null>(null);
+  const [rankings, setRankings]       = useState<any[]>([]);
   const inputRef     = useRef<HTMLInputElement>(null);
   const copyInputRef = useRef<HTMLInputElement>(null);
 
@@ -99,6 +101,7 @@ function ChallengePageInner() {
     fetch("/api/auth/me")
       .then(r => {
         if (!r.ok) { router.push("/"); return; }
+        r.json().then(d => { if (d?.name) setMyName(d.name); });
         if (searchParams.get("startSet")) return;
         return fetch("/api/challenge/score/me")
           .then(r2 => r2.json())
@@ -106,6 +109,7 @@ function ChallengePageInner() {
           .catch(() => {});
       })
       .catch(() => router.push("/"));
+    fetch("/api/rankings").then(r => r.json()).then(d => setRankings(d.rankings || [])).catch(() => {});
     fetch("/api/wordsets").then(r => r.json()).then((sets: WordSet[]) => {
       setWordSets(sets);
       const startSetId = Number(searchParams.get("startSet"));
@@ -375,6 +379,52 @@ function ChallengePageInner() {
               <div className="text-xs mt-1" style={{ color: "#AAAAAA" }}>추천 학년을 완료하면 다른 학년도 도전할 수 있어요 💪</div>
             </div>
           )}
+
+          {/* 내 순위 */}
+          {myName && rankings.length > 0 && (() => {
+            const RANK_MEDALS = ["🥇", "🥈", "🥉"];
+            return (
+              <div className="mb-5 rounded-2xl p-4" style={{ background: "#fff", border: "1.5px solid #F0E8C8" }}>
+                <p className="text-xs font-black mb-3" style={{ color: "#1F2A44" }}>🏆 내 순위</p>
+                <div className="space-y-3">
+                  {rankings.map(r => {
+                    if (!r.myVolume && !r.myScore) return null;
+                    return (
+                      <div key={r.wordSetId}>
+                        <p className="text-[10px] font-black mb-1.5" style={{ color: "#AAAAAA" }}>{r.emoji} {r.name}</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {r.myVolume && (
+                            <div className="rounded-xl px-3 py-2" style={{ background: "#FAFAFA", border: "1px solid #F0ECE0" }}>
+                              <p className="text-[9px] mb-0.5" style={{ color: "#AAAAAA" }}>⚡ 학습량</p>
+                              <p className="font-black text-sm" style={{ color: "#1F2A44" }}>
+                                {r.myVolume.rank <= 3 ? RANK_MEDALS[r.myVolume.rank - 1] : `${r.myVolume.rank}위`}
+                                <span className="text-xs ml-1" style={{ color: "#C8A800" }}>{r.myVolume.sessions}회</span>
+                              </p>
+                              {r.myVolume.rank > 1
+                                ? <p className="text-[9px]" style={{ color: "#AAAAAA" }}>위까지 <span style={{ color: "#C8A800", fontWeight: 800 }}>{r.myVolume.gapToAbove}회</span></p>
+                                : <p className="text-[9px] font-black" style={{ color: "#C8A800" }}>1등! 🎉</p>}
+                            </div>
+                          )}
+                          {r.myScore && (
+                            <div className="rounded-xl px-3 py-2" style={{ background: "#FAFAFA", border: "1px solid #F0ECE0" }}>
+                              <p className="text-[9px] mb-0.5" style={{ color: "#AAAAAA" }}>⭐ 성적</p>
+                              <p className="font-black text-sm" style={{ color: "#1F2A44" }}>
+                                {r.myScore.rank <= 3 ? RANK_MEDALS[r.myScore.rank - 1] : `${r.myScore.rank}위`}
+                                <span className="text-xs ml-1" style={{ color: "#4A9A1A" }}>{r.myScore.avgAccuracy}점</span>
+                              </p>
+                              {r.myScore.rank > 1
+                                ? <p className="text-[9px]" style={{ color: "#AAAAAA" }}>위까지 <span style={{ color: "#4A9A1A", fontWeight: 800 }}>{r.myScore.gapToAbove}점</span></p>
+                                : <p className="text-[9px] font-black" style={{ color: "#4A9A1A" }}>1등! 🎉</p>}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           <div className="grid grid-cols-2 gap-4">
             {wordSets.map(ws => {
