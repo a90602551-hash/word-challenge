@@ -6,6 +6,9 @@ export async function GET(req: Request) {
   const studentId = await getStudentId(req);
   if (!studentId) return NextResponse.json({ isFirst: false }, { status: 401 });
 
-  const count = await prisma.challengeScore.count({ where: { studentId } });
-  return NextResponse.json({ isFirst: count === 0 });
+  const [scoreCount, progressCount] = await Promise.all([
+    prisma.challengeScore.count({ where: { studentId } }),
+    prisma.learningProgress.count({ where: { studentId } }),
+  ]);
+  return NextResponse.json({ isFirst: scoreCount === 0 && progressCount === 0 });
 }
