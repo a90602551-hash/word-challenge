@@ -38,48 +38,55 @@ export default function PlacementPage() {
   const [scores, setScores]       = useState<Record<number, { correct: number; total: number }>>({});
   const [recommended, setRecommended] = useState<WordSet | null>(null);
   const [testedSetIds, setTestedSetIds] = useState<number[]>([]);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => { if (!r.ok) router.push("/"); }).catch(() => router.push("/"));
+    // 인트로 화면 뜨는 동안 백그라운드에서 미리 로딩
+    preload();
   }, [router]);
 
-  async function loadAndStart() {
-    const wsRes = await fetch("/api/wordsets");
-    const ws: WordSet[] = await wsRes.json();
-    // 학년 순서대로 정렬 (order 기준, 없으면 id 기준)
-    const sorted = [...ws].sort((a, b) => (a as any).order - (b as any).order || a.id - b.id);
-    setWordSets(sorted);
+  async function preload() {
+    try {
+      const wsRes = await fetch("/api/wordsets");
+      const ws: WordSet[] = await wsRes.json();
+      const sorted = [...ws].sort((a, b) => (a as any).order - (b as any).order || a.id - b.id);
+      setWordSets(sorted);
 
-    const allWords: { wordSetId: number; words: Word[] }[] = await Promise.all(
-      sorted.map(async w => {
-        const r = await fetch(`/api/wordsets/${w.id}/words`);
-        const words: Word[] = await r.json();
-        return { wordSetId: w.id, words: shuffle(words).slice(0, QUESTIONS_PER_GRADE) };
-      })
-    );
+      const allWords: { wordSetId: number; words: Word[] }[] = await Promise.all(
+        sorted.map(async w => {
+          const r = await fetch(`/api/wordsets/${w.id}/words`);
+          const words: Word[] = await r.json();
+          return { wordSetId: w.id, words: shuffle(words).slice(0, QUESTIONS_PER_GRADE) };
+        })
+      );
 
-    const allWordPool: Word[] = allWords.flatMap(w => w.words);
-
-    // 학년 순서대로 문제 배치 (1학년 3개 → 2학년 3개 → ...)
-    const qs: Question[] = allWords.flatMap(({ wordSetId, words }) => {
-      const wsInfo = sorted.find(w => w.id === wordSetId)!;
-      return words.map(word => {
-        const pool = allWordPool.filter(w => w.id !== word.id);
-        const distractors = shuffle(pool).slice(0, 3).map(w => w.english);
-        return {
-          word,
-          wordSetId,
-          wordSetName: wsInfo.name,
-          wordSetEmoji: wsInfo.emoji,
-          choices: shuffle([word.english, ...distractors]),
-        };
+      const allWordPool: Word[] = allWords.flatMap(w => w.words);
+      const qs: Question[] = allWords.flatMap(({ wordSetId, words }) => {
+        const wsInfo = sorted.find(w => w.id === wordSetId)!;
+        return words.map(word => {
+          const pool = allWordPool.filter(w => w.id !== word.id);
+          const distractors = shuffle(pool).slice(0, 3).map(w => w.english);
+          return { word, wordSetId, wordSetName: wsInfo.name, wordSetEmoji: wsInfo.emoji, choices: shuffle([word.english, ...distractors]) };
+        });
       });
-    });
 
-    setQuestions(qs);
-    setScores(Object.fromEntries(sorted.map(w => [w.id, { correct: 0, total: 0 }])));
-    setQIdx(0);
-    setPhase("quiz");
+      setQuestions(qs);
+      setScores(Object.fromEntries(sorted.map(w => [w.id, { correct: 0, total: 0 }])));
+      setReady(true);
+    } catch {
+      // 실패해도 버튼 누를 때 재시도
+    }
+  }
+
+  function startQuiz() {
+    if (ready) {
+      setQIdx(0);
+      setPhase("quiz");
+    } else {
+      // 아직 로딩 중이면 완료될 때까지 대기
+      preload().then(() => { setQIdx(0); setPhase("quiz"); });
+    }
   }
 
   function finishPlacement(rec: WordSet) {
@@ -162,7 +169,7 @@ export default function PlacementPage() {
             <p className="text-xs font-black mb-2" style={{ color: "#1F2A44" }}>📌 테스트 안내</p>
             <p className="text-xs" style={{ color: "#8A96A8", lineHeight: 1.9 }}>· 1학년부터 순서대로 진행<br />· 한 학년에서 막히면 그 단계 추천<br />· 학년별 3문제씩</p>
           </div>
-          <button onClick={loadAndStart}
+          <button onClick={startQuiz}
             className="w-full py-4 font-black text-lg rounded-2xl transition-all active:scale-95"
             style={{ background: "#1F2A44", color: "#F6E27F" }}>
             테스트 시작! 🚀
