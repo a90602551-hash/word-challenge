@@ -607,9 +607,47 @@ function ChallengePageInner() {
           <div className="h-2.5 rounded-full mb-2" style={{ background: "#F0ECE0" }}>
             <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: passed ? "#76C043" : "#E8463A" }} />
           </div>
-          <p className="text-xs mb-6" style={{ color: "#AAAAAA" }}>
+          <p className="text-xs mb-5" style={{ color: "#AAAAAA" }}>
             {passed ? "✅ 90% 이상 달성!" : "⚠️ 다음 단계로 가려면 90% 이상이어야 해요"}
           </p>
+
+          {/* 내 순위 */}
+          {(() => {
+            const RANK_MEDALS = ["🥇", "🥈", "🥉"];
+            const myRank = rankings.find(r => r.wordSetId === selectedSet?.id);
+            if (!myRank || (!myRank.myVolume && !myRank.myScore)) return null;
+            return (
+              <div style={{ borderTop: "1.5px solid #F0ECE0", paddingTop: "16px", marginBottom: "20px", textAlign: "left" }}>
+                <p style={{ fontSize: "11px", fontWeight: 900, color: "#1F2A44", marginBottom: "10px" }}>🏆 내 순위 · {selectedSet?.name}</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                  {myRank.myVolume && (
+                    <div style={{ background: "#FAFAFA", border: "1px solid #F0ECE0", borderRadius: "12px", padding: "10px 12px" }}>
+                      <p style={{ fontSize: "10px", color: "#AAAAAA", marginBottom: "4px" }}>⚡ 학습량</p>
+                      <p style={{ fontSize: "17px", fontWeight: 900, color: "#1F2A44", marginBottom: "2px" }}>
+                        {myRank.myVolume.rank <= 3 ? RANK_MEDALS[myRank.myVolume.rank - 1] : `${myRank.myVolume.rank}위`}{" "}
+                        <span style={{ color: "#C8A800" }}>{myRank.myVolume.sessions}회</span>
+                      </p>
+                      {myRank.myVolume.rank > 1
+                        ? <p style={{ fontSize: "10px", color: "#AAAAAA" }}>1위까지 <span style={{ color: "#C8A800", fontWeight: 800 }}>{myRank.myVolume.gapToAbove}회</span></p>
+                        : <p style={{ fontSize: "10px", color: "#C8A800", fontWeight: 900 }}>1등! 🎉</p>}
+                    </div>
+                  )}
+                  {myRank.myScore && (
+                    <div style={{ background: "#FAFAFA", border: "1px solid #F0ECE0", borderRadius: "12px", padding: "10px 12px" }}>
+                      <p style={{ fontSize: "10px", color: "#AAAAAA", marginBottom: "4px" }}>⭐ 성적</p>
+                      <p style={{ fontSize: "17px", fontWeight: 900, color: "#1F2A44", marginBottom: "2px" }}>
+                        {myRank.myScore.rank <= 3 ? RANK_MEDALS[myRank.myScore.rank - 1] : `${myRank.myScore.rank}위`}{" "}
+                        <span style={{ color: "#4A9A1A" }}>{myRank.myScore.avgAccuracy}점</span>
+                      </p>
+                      {myRank.myScore.rank > 1
+                        ? <p style={{ fontSize: "10px", color: "#AAAAAA" }}>1위까지 <span style={{ color: "#4A9A1A", fontWeight: 800 }}>{myRank.myScore.gapToAbove}점</span></p>
+                        : <p style={{ fontSize: "10px", color: "#4A9A1A", fontWeight: 900 }}>1등! 🎉</p>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {passed ? (
             <button onClick={nextBatch}
