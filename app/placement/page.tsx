@@ -42,6 +42,9 @@ export default function PlacementPage() {
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => { if (!r.ok) router.push("/"); }).catch(() => router.push("/"));
+    fetch("/api/challenge/score/me").then(r => r.json()).then(d => {
+      if (!d?.isFirst) router.replace("/challenge");
+    }).catch(() => {});
     // 인트로 화면 뜨는 동안 백그라운드에서 미리 로딩
     preload();
   }, [router]);
