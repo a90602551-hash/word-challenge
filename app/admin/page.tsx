@@ -442,6 +442,27 @@ export default function AdminPage() {
               </div>
 
               <div style={{ ...cardStyle, padding: "18px 20px" }}>
+                <div style={{ fontWeight: 900, color: "#1F2A44", fontSize: "13px", marginBottom: "12px" }}>🏫 고등학교 단어 초기화</div>
+                <p style={{ fontSize: "12px", color: "#888", marginBottom: "12px" }}>고1·고2·고3 단어장을 생성하고 각 300개 단어를 추가합니다. 이미 단어가 있는 단어장은 건너뜁니다.</p>
+                <button
+                  onClick={async () => {
+                    if (!confirm("고1~고3 단어장을 초기화할까요? 이미 단어가 있는 단어장은 스킵됩니다.")) return;
+                    const res = await fetch("/api/seed/high", { method: "POST" });
+                    const data = await res.json();
+                    if (data.ok) {
+                      alert("완료!\n" + Object.entries(data.results).map(([k, v]) => `${k}: ${v}`).join("\n"));
+                      loadWordSets();
+                    } else {
+                      alert("오류 발생");
+                    }
+                  }}
+                  style={{ ...btnPrimary, background: "#1F2A44" }}
+                >
+                  🚀 고등학교 단어 초기화 실행
+                </button>
+              </div>
+
+              <div style={{ ...cardStyle, padding: "18px 20px" }}>
                 <div style={{ fontWeight: 900, color: "#1F2A44", fontSize: "13px", marginBottom: "12px" }}>➕ 단어장 추가</div>
                 <form onSubmit={addWordSet} style={{ display: "flex", gap: "8px" }}>
                   <input value={wsEmoji} onChange={e => setWsEmoji(e.target.value)} placeholder="📚" style={{ ...inputStyle, width: "50px", textAlign: "center", fontSize: "18px" }} />
