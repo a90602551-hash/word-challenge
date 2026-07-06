@@ -142,7 +142,12 @@ function ChallengePageInner() {
 
   useEffect(() => {
     if (screen === "quiz-typing") inputRef.current?.focus();
-    if (screen === "copy-typing") { setCopyTyped(""); setCopyOk(null); setTimeout(() => copyInputRef.current?.focus(), 100); }
+    if (screen === "copy-typing") {
+      setCopyTyped(""); setCopyOk(null);
+      setTimeout(() => copyInputRef.current?.focus(), 100);
+      const cq = currentBatch[copyIdx];
+      if (cq) setTimeout(() => speak(cq.english), 300);
+    }
   }, [screen, quizIdx, copyIdx, copyRound]);
 
   const currentBatch = batches[batchIdx] ?? [];
