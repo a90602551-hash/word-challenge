@@ -209,7 +209,10 @@ function ChallengePageInner() {
   function buildChoices(s: Screen, batch: Word[], idx: number) {
     const q = batch[idx];
     if (!q) return;
-    if (s === "quiz-mtw") setChoices(getChoices(q, allWords, "english"));
+    if (s === "quiz-mtw") {
+      setChoices(getChoices(q, allWords, "english"));
+      setTimeout(() => speak(q.english), 300);
+    }
     if (s === "quiz-wtm") setChoices(getChoices(q, allWords, "korean"));
   }
 
