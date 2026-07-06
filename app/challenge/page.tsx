@@ -323,6 +323,8 @@ function ChallengePageInner() {
           wordSetId: selectedSet?.id,
         }),
       });
+      // 점수 저장 후 순위 갱신
+      fetch("/api/rankings").then(r => r.json()).then(d => setRankings(d.rankings || [])).catch(() => {});
     } catch {}
   }
 
