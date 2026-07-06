@@ -170,7 +170,7 @@ function ChallengePageInner() {
       fetch(`/api/progress?wordSetId=${ws.id}`),
     ]);
     const words: Word[] = await wordsRes.json();
-    if (words.length < 4) { alert("단어가 최소 4개 이상 필요해요!"); return; }
+    if (words.length < 4) { setInitializing(false); alert("단어가 최소 4개 이상 필요해요!"); return; }
 
     const progress = progressRes.ok ? await progressRes.json() : null;
 
