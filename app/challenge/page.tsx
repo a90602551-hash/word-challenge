@@ -130,6 +130,11 @@ function ChallengePageInner() {
           const map: Record<number, number> = {};
           results.forEach((p, i) => { if (p?.batchIdx > 0) map[sets[i].id] = p.batchIdx; });
           setProgressMap(map);
+          // 서버 progress가 있으면 해당 학년으로 자동 이동
+          const activeIdx = results.findIndex(p => p !== null);
+          if (activeIdx >= 0) {
+            setTimeout(() => selectSet(sets[activeIdx]), 100);
+          }
         }).catch(() => {});
     }).catch(() => {});
   }, [router]);
