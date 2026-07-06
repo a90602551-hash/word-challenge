@@ -37,7 +37,8 @@ export async function POST(req: Request) {
     const res = NextResponse.json({ ok: true });
     res.cookies.set(STUDENT_COOKIE, token, { httpOnly: true, path: "/", maxAge: 60 * 60 * 24 * 30 });
     return res;
-  } catch {
+  } catch (e: any) {
+    if (e?.code === "P2002") return NextResponse.json({ error: "이미 사용 중인 아이디예요" }, { status: 400 });
     return NextResponse.json({ error: "오류가 발생했어요" }, { status: 500 });
   }
 }
