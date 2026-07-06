@@ -94,6 +94,7 @@ function ChallengePageInner() {
   const [copyOk, setCopyOk]           = useState<boolean | null>(null);
   const [myName, setMyName]           = useState<string | null>(null);
   const [rankings, setRankings]       = useState<any[]>([]);
+  const [initializing, setInitializing] = useState(true);
   const inputRef     = useRef<HTMLInputElement>(null);
   const copyInputRef = useRef<HTMLInputElement>(null);
 
@@ -122,20 +123,20 @@ function ChallengePageInner() {
       const unlockedIdx = typeof window !== "undefined" ? Number(localStorage.getItem("wc_unlocked_idx") ?? -1) : -1;
       if (placedId && unlockedIdx >= 0 && unlockedIdx < sets.length) {
         const target = sets[unlockedIdx];
-        if (target) setTimeout(() => selectSet(target), 100);
-        return;
+        if (target) { setTimeout(() => selectSet(target), 100); return; }
       }
       Promise.all(sets.map(ws => fetch(`/api/progress?wordSetId=${ws.id}`).then(r => r.ok ? r.json() : null)))
         .then(results => {
           const map: Record<number, number> = {};
           results.forEach((p, i) => { if (p?.batchIdx > 0) map[sets[i].id] = p.batchIdx; });
           setProgressMap(map);
-          // 서버 progress가 있으면 해당 학년으로 자동 이동
           const activeIdx = results.findIndex(p => p !== null);
           if (activeIdx >= 0) {
             setTimeout(() => selectSet(sets[activeIdx]), 100);
+          } else {
+            setInitializing(false);
           }
-        }).catch(() => {});
+        }).catch(() => { setInitializing(false); });
     }).catch(() => {});
   }, [router]);
 
@@ -352,7 +353,7 @@ function ChallengePageInner() {
 
   // ── 단어장 선택 ──
   if (screen === "select-set") {
-    if (searchParams.get("startSet")) {
+    if (searchParams.get("startSet") || initializing) {
       return (
         <div className="min-h-screen flex items-center justify-center" style={{ background: "#FFF9E6" }}>
           <p className="text-lg font-bold animate-pulse" style={{ color: "#1F2A44" }}>학습 준비 중... ✨</p>
