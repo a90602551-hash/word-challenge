@@ -213,7 +213,10 @@ function ChallengePageInner() {
       setChoices(getChoices(q, allWords, "english"));
       setTimeout(() => speak(q.english), 300);
     }
-    if (s === "quiz-wtm") setChoices(getChoices(q, allWords, "korean"));
+    if (s === "quiz-wtm") {
+      setChoices(getChoices(q, allWords, "korean"));
+      setTimeout(() => speak(q.english), 300);
+    }
   }
 
   function handleChoice(choice: string) {
