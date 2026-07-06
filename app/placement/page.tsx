@@ -66,7 +66,7 @@ export default function PlacementPage() {
         const wsInfo = sorted.find(w => w.id === wordSetId)!;
         return words.map(word => {
           const pool = allWordPool.filter(w => w.id !== word.id);
-          const distractors = shuffle(pool).slice(0, 3).map(w => w.english);
+          const distractors = shuffle(pool).slice(0, 7).map(w => w.english);
           return { word, wordSetId, wordSetName: wsInfo.name, wordSetEmoji: wsInfo.emoji, choices: shuffle([word.english, ...distractors]) };
         });
       });
@@ -229,7 +229,7 @@ export default function PlacementPage() {
           </div>
 
           {/* 보기 버튼 */}
-          <div className="w-full max-w-sm grid grid-cols-2 gap-3">
+          <div className="w-full max-w-sm grid grid-cols-2 gap-2">
             {q.choices.map(choice => {
               let bg = "#1F2A44";
               let border = "1.5px solid #2E3D5A";
@@ -241,7 +241,7 @@ export default function PlacementPage() {
               }
               return (
                 <button key={choice} onClick={() => handleChoice(choice)} disabled={selected !== null}
-                  className="rounded-2xl p-4 text-center font-bold text-sm transition-all duration-200 active:scale-95"
+                  className="rounded-2xl p-3 text-center font-bold text-sm transition-all duration-200 active:scale-95"
                   style={{ background: bg, border, color }}>
                   {choice}
                 </button>
