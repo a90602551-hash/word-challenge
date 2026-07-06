@@ -27,9 +27,11 @@ model Student {
   isEnrolled      Boolean          @default(true)
   parentName      String?
   parentPhone     String?
-  expiresAt       DateTime?
-  placementDone   Boolean          @default(false)
-  challengeScores   ChallengeScore[]
+  expiresAt          DateTime?
+  placementDone      Boolean          @default(false)
+  currentWordSetId   Int?
+  currentWordSet     WordSet?         @relation(fields: [currentWordSetId], references: [id], onDelete: SetNull)
+  challengeScores    ChallengeScore[]
   learningProgress  LearningProgress[]
   createdAt       DateTime         @default(now())
 }
@@ -42,6 +44,7 @@ model WordSet {
   order       Int      @default(0)
   isBuiltIn   Boolean  @default(false)
   words       Word[]
+  students    Student[]
   createdAt   DateTime @default(now())
 }
 

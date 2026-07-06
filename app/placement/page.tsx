@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 interface Word    { id: number; english: string; korean: string; }
 interface WordSet { id: number; name: string; emoji: string; _count: { words: number }; }
 
-const QUESTIONS_PER_GRADE = 3;
+const QUESTIONS_PER_GRADE = 5;
 const PASS_THRESHOLD = 0.7; // 3문제 중 2개 이상 (67%) → 통과
 
 function shuffle<T>(arr: T[]): T[] {
@@ -153,6 +153,9 @@ export default function PlacementPage() {
       localStorage.setItem("wc_placed_id", String(wsId));
       localStorage.setItem("wc_unlocked_idx", String(idx));
     }
+    fetch("/api/auth/me").then(r => r.json()).then(me => {
+      if (me?.id) fetch(`/api/students/${me.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currentWordSetId: wsId }) }).catch(() => {});
+    }).catch(() => {});
     router.replace(`/challenge?startSet=${wsId}`);
   }
 
@@ -167,7 +170,7 @@ export default function PlacementPage() {
           <p className="text-sm mb-6" style={{ color: "#8A96A8", lineHeight: 1.7 }}>나에게 딱 맞는 학년을<br />찾아드릴게요! 😊</p>
           <div className="text-left mb-6" style={{ background: "#FFFBEE", border: "1.5px solid #F0E8C8", borderRadius: "14px", padding: "14px" }}>
             <p className="text-xs font-black mb-2" style={{ color: "#1F2A44" }}>📌 테스트 안내</p>
-            <p className="text-xs" style={{ color: "#8A96A8", lineHeight: 1.9 }}>· 1학년부터 순서대로 진행<br />· 한 학년에서 막히면 그 단계 추천<br />· 학년별 3문제씩</p>
+            <p className="text-xs" style={{ color: "#8A96A8", lineHeight: 1.9 }}>· 1학년부터 순서대로 진행<br />· 한 학년에서 막히면 그 단계 추천<br />· 학년별 5문제씩</p>
           </div>
           <button onClick={startQuiz}
             className="w-full py-4 font-black text-lg rounded-2xl transition-all active:scale-95"

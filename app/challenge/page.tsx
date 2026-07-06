@@ -109,7 +109,14 @@ function ChallengePageInner() {
     fetch("/api/auth/me")
       .then(r => {
         if (!r.ok) { router.push("/"); return; }
-        r.json().then(d => { if (d?.name) setMyName(d.name); });
+        r.json().then(d => {
+          if (d?.name) setMyName(d.name);
+          if (d?.currentWordSetId) {
+            if (typeof window !== "undefined" && !localStorage.getItem("wc_placed_id")) {
+              localStorage.setItem("wc_placed_id", String(d.currentWordSetId));
+            }
+          }
+        });
         if (searchParams.get("startSet")) return;
         return fetch("/api/challenge/score/me")
           .then(r2 => r2.json())

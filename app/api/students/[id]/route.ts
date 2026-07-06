@@ -24,6 +24,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ ok: true });
   }
 
+  if (body.currentWordSetId !== undefined) {
+    await prisma.student.update({ where: { id: Number(id) }, data: { currentWordSetId: body.currentWordSetId || null } });
+    return NextResponse.json({ ok: true });
+  }
+
   if (body.extendDays) {
     const student = await prisma.student.findUnique({ where: { id: Number(id) } });
     if (!student) return NextResponse.json({ error: "학생 없음" }, { status: 404 });

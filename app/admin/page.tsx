@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import * as XLSX from "xlsx";
 
-interface Student  { id: number; name: string; username: string; avatar: string; approved: boolean; isEnrolled: boolean; parentName?: string; parentPhone?: string; createdAt: string; expiresAt?: string; }
+interface Student  { id: number; name: string; username: string; avatar: string; approved: boolean; isEnrolled: boolean; parentName?: string; parentPhone?: string; createdAt: string; expiresAt?: string; currentWordSetId?: number; }
 interface WordSet   { id: number; name: string; emoji: string; description: string; _count: { words: number }; }
 interface Word      { id: number; english: string; korean: string; }
 interface ScoreRow  { id: number; studentId: number; wordSetId: number | null; score: number; totalQuestions: number; createdAt: string; }
@@ -50,6 +50,15 @@ export default function AdminPage() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ extendDays: days }),
+    });
+    loadStudents();
+  }
+
+  async function changeGrade(studentId: number, wordSetId: number | null) {
+    await fetch(`/api/students/${studentId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentWordSetId: wordSetId }),
     });
     loadStudents();
   }
@@ -349,6 +358,19 @@ export default function AdminPage() {
                         <p style={{ fontSize: "11px", color: "#AAAAAA" }}>@{s.username}</p>
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "5px" }}>
+                        {/* 학년 변경 */}
+                        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                          <span style={{ fontSize: "10px", color: "#AAAAAA" }}>학년:</span>
+                          <select
+                            value={s.currentWordSetId ?? ""}
+                            onChange={e => changeGrade(s.id, e.target.value ? Number(e.target.value) : null)}
+                            style={{ fontSize: "11px", border: "1px solid #E0D8C0", borderRadius: "8px", padding: "2px 6px", color: "#1F2A44", background: "#FFFBEE", cursor: "pointer" }}>
+                            <option value="">미배정</option>
+                            {wordSets.map(ws => (
+                              <option key={ws.id} value={ws.id}>{ws.name}</option>
+                            ))}
+                          </select>
+                        </div>
                         {/* 만료일 뱃지 (비재원생만) */}
                         {!s.isEnrolled && (() => {
                           const lbl = expiryLabel(s);
