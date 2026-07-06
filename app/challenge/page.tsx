@@ -11,7 +11,8 @@ function speak(text: string) {
 interface WordSet { id: number; name: string; emoji: string; description: string; _count: { words: number }; }
 interface Word    { id: number; english: string; korean: string; }
 
-type Screen = "select-set" | "study" | "quiz-mtw" | "quiz-wtm" | "copy-typing" | "quiz-typing" | "stage-fail" | "batch-result" | "all-done";
+type Screen = "select-set" | "study" | "quiz-mtw" | "quiz-wtm" | "copy-typing" | "quiz-typing" | "stage-fail" | "batch-result" | "review" | "review-done" | "all-done";
+const REVIEW_EVERY = 5;
 const COPY_ROUNDS = 3;
 const BATCH_SIZE = 5;
 
@@ -95,6 +96,12 @@ function ChallengePageInner() {
   const [myName, setMyName]           = useState<string | null>(null);
   const [rankings, setRankings]       = useState<any[]>([]);
   const [initializing, setInitializing] = useState(true);
+  const [reviewWords, setReviewWords]   = useState<Word[]>([]);
+  const [reviewIdx, setReviewIdx]       = useState(0);
+  const [reviewChoices, setReviewChoices] = useState<string[]>([]);
+  const [reviewSelected, setReviewSelected] = useState<string | null>(null);
+  const [reviewIsCorrect, setReviewIsCorrect] = useState<boolean | null>(null);
+  const [reviewScore, setReviewScore]   = useState(0);
   const inputRef     = useRef<HTMLInputElement>(null);
   const copyInputRef = useRef<HTMLInputElement>(null);
 
@@ -347,6 +354,28 @@ function ChallengePageInner() {
       }
       setScreen("all-done");
     } else {
+      // 5그룹마다 복습 삽입
+      const completedCount = batchIdx + 1;
+      if (completedCount % REVIEW_EVERY === 0) {
+        const reviewStart = completedCount - REVIEW_EVERY;
+        const words = shuffle(batches.slice(reviewStart, completedCount).flat());
+        setReviewWords(words);
+        setReviewIdx(0);
+        setReviewSelected(null);
+        setReviewIsCorrect(null);
+        setReviewScore(0);
+        setReviewChoices(getChoices(words[0], allWords, "english"));
+        setTimeout(() => speak(words[0].english), 300);
+        setBatchIdx(next);
+        fetch("/api/progress", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wordSetId: selectedSet?.id, batchIdx: next, wordOrder: batches.flat().map(w => w.id) }),
+        }).catch(() => {});
+        setScreen("review");
+        setAnimKey(k => k + 1);
+        return;
+      }
       setBatchIdx(next);
       setScreen("study");
       setAnimKey(k => k + 1);
@@ -357,6 +386,27 @@ function ChallengePageInner() {
         body: JSON.stringify({ wordSetId: selectedSet?.id, batchIdx: next, wordOrder }),
       }).catch(() => {});
     }
+  }
+
+  function handleReviewChoice(choice: string) {
+    if (reviewSelected !== null) return;
+    const q = reviewWords[reviewIdx];
+    const ok = choice === q.english;
+    setReviewSelected(choice);
+    setReviewIsCorrect(ok);
+    if (ok) setReviewScore(s => s + 1);
+    setTimeout(() => {
+      const next = reviewIdx + 1;
+      if (next < reviewWords.length) {
+        setReviewIdx(next);
+        setReviewSelected(null);
+        setReviewIsCorrect(null);
+        setReviewChoices(getChoices(reviewWords[next], allWords, "english"));
+        setTimeout(() => speak(reviewWords[next].english), 200);
+      } else {
+        setScreen("review-done");
+      }
+    }, 700);
   }
 
   async function handleLogout() {
@@ -592,6 +642,80 @@ function ChallengePageInner() {
             className="w-full py-4 rounded-2xl font-black text-lg transition-all active:scale-95"
             style={{ background: "#1F2A44", color: "#F6E27F" }}>
             📖 처음부터 다시 외우기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── 빠른 복습 ──
+  if (screen === "review") {
+    const q = reviewWords[reviewIdx];
+    if (!q) return null;
+    const pct = Math.round((reviewIdx / reviewWords.length) * 100);
+    return (
+      <div className="min-h-screen flex flex-col" style={{ background: "#FFF9E6" }}>
+        <div style={{ background: "#76C043", padding: "16px 20px" }}>
+          <div style={{ textAlign: "center", marginBottom: "8px" }}>
+            <div style={{ fontSize: "13px", fontWeight: 900, color: "#fff" }}>🔁 빠른 복습!</div>
+            <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.7)", marginTop: "2px" }}>{reviewIdx + 1}/{reviewWords.length}단어</div>
+          </div>
+          <div style={{ height: "5px", background: "rgba(255,255,255,0.3)", borderRadius: "999px", overflow: "hidden" }}>
+            <div style={{ width: `${pct}%`, height: "100%", background: "#fff", borderRadius: "999px", transition: "width 0.4s" }} />
+          </div>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center px-5 gap-5">
+          <div className="w-full max-w-sm text-center" style={{ background: "#fff", border: "1.5px solid #F0E8C8", borderRadius: "20px", padding: "28px 24px" }}>
+            <p className="text-xs font-black mb-3 uppercase tracking-wide" style={{ color: "#AAAAAA" }}>한국어 뜻</p>
+            <p className="text-4xl font-black" style={{ color: "#1F2A44" }}>{q.korean}</p>
+            {reviewIsCorrect === true  && <p className="mt-3 font-black" style={{ color: "#76C043" }}>✅ {q.english}</p>}
+            {reviewIsCorrect === false && <p className="mt-3 text-sm font-bold" style={{ color: "#E8463A" }}>❌ 정답: {q.english}</p>}
+          </div>
+          <div className="w-full max-w-sm grid grid-cols-2 gap-3">
+            {reviewChoices.map(choice => {
+              let bg = "#1F2A44", border = "1.5px solid #2E3D5A", color = "rgba(255,255,255,0.6)";
+              if (reviewSelected !== null) {
+                if (choice === q.english)       { bg = "#76C043"; border = "none"; color = "#fff"; }
+                else if (choice === reviewSelected) { bg = "#E8463A"; border = "none"; color = "#fff"; }
+                else                             { bg = "rgba(31,42,68,0.4)"; color = "rgba(255,255,255,0.3)"; }
+              }
+              return (
+                <button key={choice} onClick={() => handleReviewChoice(choice)} disabled={reviewSelected !== null}
+                  className="rounded-2xl p-4 text-center font-bold text-sm transition-all active:scale-95"
+                  style={{ background: bg, border, color }}>
+                  {choice}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── 복습 완료 ──
+  if (screen === "review-done") {
+    const pct = reviewWords.length > 0 ? Math.round((reviewScore / reviewWords.length) * 100) : 0;
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: "#FFF9E6" }}>
+        <div className="w-full max-w-sm text-center" style={{ background: "#fff", border: "1.5px solid #F0E8C8", borderRadius: "24px", padding: "32px 28px" }}>
+          <div className="text-5xl mb-3">🔁</div>
+          <h2 className="text-2xl font-black mb-1" style={{ color: "#1F2A44" }}>복습 완료!</h2>
+          <p className="text-sm mb-5" style={{ color: "#AAAAAA" }}>{reviewWords.length}단어 · 정답률 {pct}%</p>
+          <div className="flex justify-center gap-4 mb-6">
+            <div className="rounded-2xl px-5 py-4" style={{ background: "#FFFBEE", border: "1.5px solid #F0E8C8" }}>
+              <p className="text-3xl font-black" style={{ color: "#1F2A44" }}>{reviewScore}<span className="text-lg">/{reviewWords.length}</span></p>
+              <p className="text-xs mt-1" style={{ color: "#AAAAAA" }}>정답</p>
+            </div>
+            <div className="rounded-2xl px-5 py-4" style={{ background: pct >= 70 ? "#F0FBE8" : "#FFF0EE", border: `1.5px solid ${pct >= 70 ? "#B8ECA0" : "#F0C0BC"}` }}>
+              <p className="text-3xl font-black" style={{ color: pct >= 70 ? "#76C043" : "#E8463A" }}>{pct}%</p>
+              <p className="text-xs mt-1" style={{ color: "#AAAAAA" }}>정답률</p>
+            </div>
+          </div>
+          <button onClick={() => { setScreen("study"); setAnimKey(k => k + 1); }}
+            className="w-full py-4 rounded-2xl font-black text-lg transition-all active:scale-95"
+            style={{ background: "#1F2A44", color: "#F6E27F" }}>
+            계속 학습하기 →
           </button>
         </div>
       </div>
