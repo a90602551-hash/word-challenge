@@ -151,7 +151,7 @@ function ChallengePageInner() {
             setInitializing(false);
           }
         }).catch(() => { setInitializing(false); });
-    }).catch(() => {});
+    }).catch(() => { setInitializing(false); });
   }, [router]);
 
   useEffect(() => {
@@ -201,6 +201,7 @@ function ChallengePageInner() {
     setTotalQuestions(0);
     setScreen("study");
     setAnimKey(k => k + 1);
+    setInitializing(false);
 
     if (!progress) {
       fetch("/api/progress", {
