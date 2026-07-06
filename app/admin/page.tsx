@@ -45,6 +45,9 @@ export default function AdminPage() {
   const [pwStudentId, setPwStudentId] = useState<number | null>(null);
   const [newPw, setNewPw]             = useState("");
 
+  // 학년 변경 (로컬 임시값)
+  const [gradeEdits, setGradeEdits] = useState<Record<number, string>>({});
+
   async function extendStudent(id: number, days: number) {
     await fetch(`/api/students/${id}`, {
       method: "PATCH",
@@ -362,14 +365,25 @@ export default function AdminPage() {
                         <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                           <span style={{ fontSize: "10px", color: "#AAAAAA" }}>학년:</span>
                           <select
-                            value={s.currentWordSetId ?? ""}
-                            onChange={e => changeGrade(s.id, e.target.value ? Number(e.target.value) : null)}
-                            style={{ fontSize: "11px", border: "1px solid #E0D8C0", borderRadius: "8px", padding: "2px 6px", color: "#1F2A44", background: "#FFFBEE", cursor: "pointer" }}>
+                            value={gradeEdits[s.id] !== undefined ? gradeEdits[s.id] : (s.currentWordSetId ?? "")}
+                            onChange={e => setGradeEdits(prev => ({ ...prev, [s.id]: e.target.value }))}
+                            style={{ fontSize: "11px", border: `1px solid ${gradeEdits[s.id] !== undefined && gradeEdits[s.id] !== String(s.currentWordSetId ?? "") ? "#F6A800" : "#E0D8C0"}`, borderRadius: "8px", padding: "2px 6px", color: "#1F2A44", background: gradeEdits[s.id] !== undefined && gradeEdits[s.id] !== String(s.currentWordSetId ?? "") ? "#FFFBEE" : "#FAFAFA", cursor: "pointer" }}>
                             <option value="">미배정</option>
                             {wordSets.map(ws => (
                               <option key={ws.id} value={ws.id}>{ws.name}</option>
                             ))}
                           </select>
+                          {gradeEdits[s.id] !== undefined && gradeEdits[s.id] !== String(s.currentWordSetId ?? "") && (
+                            <button
+                              onClick={async () => {
+                                const val = gradeEdits[s.id];
+                                await changeGrade(s.id, val ? Number(val) : null);
+                                setGradeEdits(prev => { const n = { ...prev }; delete n[s.id]; return n; });
+                              }}
+                              style={{ fontSize: "10px", background: "#1F2A44", color: "#F6E27F", border: "none", borderRadius: "6px", padding: "3px 8px", cursor: "pointer", fontWeight: 800 }}>
+                              저장
+                            </button>
+                          )}
                         </div>
                         {/* 만료일 뱃지 (비재원생만) */}
                         {!s.isEnrolled && (() => {
