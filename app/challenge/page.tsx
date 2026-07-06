@@ -145,8 +145,6 @@ function ChallengePageInner() {
     if (screen === "copy-typing") {
       setCopyTyped(""); setCopyOk(null);
       setTimeout(() => copyInputRef.current?.focus(), 100);
-      const cq = currentBatch[copyIdx];
-      if (cq) setTimeout(() => speak(cq.english), 300);
     }
   }, [screen, quizIdx, copyIdx, copyRound]);
 
@@ -273,6 +271,8 @@ function ChallengePageInner() {
         setCopyRound(1); setCopyIdx(0); setCopyTyped(""); setCopyOk(null);
         setScreen("copy-typing");
         setAnimKey(k => k + 1);
+        const firstWord = currentBatch[0];
+        if (firstWord) setTimeout(() => speak(firstWord.english), 300);
       } else if (screen === "quiz-typing") {
         setScreen("batch-result");
         saveBatchScore();
@@ -295,11 +295,13 @@ function ChallengePageInner() {
       const nextRound = copyRound + 1;
       if (nextRound <= COPY_ROUNDS) {
         setCopyRound(nextRound);
+        speak(currentBatch[copyIdx].english);
       } else {
         const nextIdx = copyIdx + 1;
         if (nextIdx < currentBatch.length) {
           setCopyIdx(nextIdx);
           setCopyRound(1);
+          speak(currentBatch[nextIdx].english);
         } else {
           setQuizIdx(0); setSelected(null); setIsCorrect(null); setTyped("");
           setScreen("quiz-typing");
