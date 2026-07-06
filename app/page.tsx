@@ -27,11 +27,12 @@ export default function MainPage() {
   const [error, setError]       = useState("");
   const [loading, setLoading]   = useState(false);
   const [rankings, setRankings] = useState<GradeRanking[]>([]);
+  const [overall, setOverall]   = useState<{ volumeTop3: any[]; scoreTop3: any[]; myVolume: any; myScore: any } | null>(null);
   const [gradeTab, setGradeTab] = useState(0);
   const [myName, setMyName]     = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/rankings").then(r => r.json()).then(d => setRankings(d.rankings || [])).catch(() => {});
+    fetch("/api/rankings").then(r => r.json()).then(d => { setRankings(d.rankings || []); setOverall(d.overall || null); }).catch(() => {});
     fetch("/api/auth/me").then(r => r.ok ? r.json() : null).then(d => { if (d?.name) setMyName(d.name); }).catch(() => {});
   }, []);
 
@@ -101,6 +102,98 @@ export default function MainPage() {
 
           {/* 왼쪽: 순위판 */}
           <div className="main-rank-col rounded-3xl p-6 bg-white" style={{ border: "1.5px solid #F0E8C8", boxShadow: "0 2px 12px rgba(246,226,127,0.2)" }}>
+
+            {/* 종합 순위 */}
+            {overall && (
+              <div className="mb-6 rounded-2xl p-4" style={{ background: "linear-gradient(135deg, #1F2A44 0%, #2D3F66 100%)", border: "2px solid #F6E27F" }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <span style={{ fontSize: "18px" }}>🏆</span>
+                  <p className="font-black text-sm" style={{ color: "#F6E27F" }}>종합 순위</p>
+                </div>
+                <p className="text-[10px] font-bold mb-4" style={{ color: "rgba(246,226,127,0.7)" }}>챌린지 시상은 종합순위로 해요!</p>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* 학습량 */}
+                  <div>
+                    <p className="text-[10px] font-black mb-2 uppercase tracking-wide" style={{ color: "#76C043" }}>⚡ 학습량 TOP 3</p>
+                    {overall.volumeTop3.length === 0 ? (
+                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>아직 기록이 없어요!</p>
+                    ) : (() => {
+                      const max = overall.volumeTop3[0]?.sessions ?? 1;
+                      return (
+                        <div className="space-y-2">
+                          {overall.volumeTop3.map((entry: any, i: number) => {
+                            const pct = Math.round((entry.sessions / max) * 100);
+                            return (
+                              <div key={entry.student?.id}>
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                  <span className="text-sm">{RANK_MEDALS[i]}</span>
+                                  <span className="text-sm">{entry.student?.avatar}</span>
+                                  <span className="font-bold text-xs flex-1 truncate" style={{ color: "white" }}>{entry.student?.name}</span>
+                                  <span className="text-xs font-black" style={{ color: "#F6E27F" }}>{entry.sessions}회</span>
+                                </div>
+                                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+                                  <div className="h-full rounded-full" style={{ width: `${pct}%`, background: BAR_COLORS[i] }} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  {/* 성적 */}
+                  <div>
+                    <p className="text-[10px] font-black mb-2 uppercase tracking-wide" style={{ color: "#76C043" }}>⭐ 성적 TOP 3</p>
+                    {overall.scoreTop3.length === 0 ? (
+                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>아직 기록이 없어요!</p>
+                    ) : (() => {
+                      const max = overall.scoreTop3[0]?.avgAccuracy ?? 1;
+                      return (
+                        <div className="space-y-2">
+                          {overall.scoreTop3.map((entry: any, i: number) => {
+                            const pct = Math.round((entry.avgAccuracy / max) * 100);
+                            return (
+                              <div key={entry.student?.id}>
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                  <span className="text-sm">{RANK_MEDALS[i]}</span>
+                                  <span className="text-sm">{entry.student?.avatar}</span>
+                                  <span className="font-bold text-xs flex-1 truncate" style={{ color: "white" }}>{entry.student?.name}</span>
+                                  <span className="text-xs font-black" style={{ color: "#76C043" }}>{entry.avgAccuracy}점</span>
+                                </div>
+                                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
+                                  <div className="h-full rounded-full" style={{ width: `${pct}%`, background: BAR_COLORS[i] }} />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </div>
+                {/* 내 종합 순위 (로그인 시) */}
+                {myName && (overall.myVolume || overall.myScore) && (
+                  <div className="mt-4 rounded-xl p-3" style={{ background: "rgba(246,226,127,0.12)", border: "1px solid rgba(246,226,127,0.3)" }}>
+                    <p className="text-[10px] font-black mb-2" style={{ color: "#F6E27F" }}>🙋 {myName}의 종합 순위</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {overall.myVolume && (
+                        <div>
+                          <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.5)" }}>⚡ 학습량</p>
+                          <p className="font-black text-sm" style={{ color: "white" }}>{overall.myVolume.rank}위 <span style={{ color: "#F6E27F" }}>{overall.myVolume.sessions}회</span></p>
+                        </div>
+                      )}
+                      {overall.myScore && (
+                        <div>
+                          <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.5)" }}>⭐ 성적</p>
+                          <p className="font-black text-sm" style={{ color: "white" }}>{overall.myScore.rank}위 <span style={{ color: "#76C043" }}>{overall.myScore.avgAccuracy}점</span></p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <h2 className="font-black text-sm mb-4" style={{ color: "#1F2A44" }}>🏆 학년별 순위</h2>
 
             {/* 학년 탭 */}

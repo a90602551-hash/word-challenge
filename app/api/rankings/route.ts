@@ -97,7 +97,58 @@ export async function GET(req: Request) {
       myScore: r.myScore,
     }));
 
-    return NextResponse.json({ rankings });
+    // 종합 순위: PLACEMENT 제외한 모든 점수 합산
+    const normalScores = allScores.filter(sc => sc.wordSetId !== null);
+    const totalSessionMap = new Map<number, number>();
+    const totalAccSumMap = new Map<number, number>();
+    const totalAccCntMap = new Map<number, number>();
+    for (const sc of normalScores) {
+      totalSessionMap.set(sc.studentId, (totalSessionMap.get(sc.studentId) ?? 0) + 1);
+      const acc = sc.score / sc.totalQuestions;
+      totalAccSumMap.set(sc.studentId, (totalAccSumMap.get(sc.studentId) ?? 0) + acc);
+      totalAccCntMap.set(sc.studentId, (totalAccCntMap.get(sc.studentId) ?? 0) + 1);
+    }
+
+    const totalVolumeAll = [...totalSessionMap.entries()].sort((a, b) => b[1] - a[1]);
+    const totalScoreAll = [...totalAccSumMap.entries()]
+      .map(([id, sum]) => [id, sum / (totalAccCntMap.get(id) ?? 1)] as [number, number])
+      .sort((a, b) => b[1] - a[1]);
+
+    const totalIds = new Set<number>([
+      ...totalVolumeAll.slice(0, 3).map(([id]) => id),
+      ...totalScoreAll.slice(0, 3).map(([id]) => id),
+    ]);
+    const extraStudents = await prisma.student.findMany({
+      where: { id: { in: [...totalIds].filter(id => !studentMap.has(id)) } },
+      select: { id: true, name: true, avatar: true },
+    });
+    extraStudents.forEach(s => studentMap.set(s.id, s));
+
+    let overallMyVolume: { rank: number; sessions: number; gapToAbove: number } | null = null;
+    let overallMyScore: { rank: number; avgAccuracy: number; gapToAbove: number } | null = null;
+    if (myId) {
+      const vi = totalVolumeAll.findIndex(([id]) => id === myId);
+      if (vi >= 0) {
+        const myVal = totalVolumeAll[vi][1];
+        const aboveVal = vi > 0 ? totalVolumeAll[vi - 1][1] : myVal;
+        overallMyVolume = { rank: vi + 1, sessions: myVal, gapToAbove: aboveVal - myVal };
+      }
+      const si = totalScoreAll.findIndex(([id]) => id === myId);
+      if (si >= 0) {
+        const myVal = totalScoreAll[si][1];
+        const aboveVal = si > 0 ? totalScoreAll[si - 1][1] : myVal;
+        overallMyScore = { rank: si + 1, avgAccuracy: Math.round(myVal * 100), gapToAbove: Math.round((aboveVal - myVal) * 100) };
+      }
+    }
+
+    const overall = {
+      volumeTop3: totalVolumeAll.slice(0, 3).map(([id, sessions], i) => ({ rank: i + 1, student: studentMap.get(id), sessions })),
+      scoreTop3: totalScoreAll.slice(0, 3).map(([id, avg], i) => ({ rank: i + 1, student: studentMap.get(id), avgAccuracy: Math.round(avg * 100) })),
+      myVolume: overallMyVolume,
+      myScore: overallMyScore,
+    };
+
+    return NextResponse.json({ rankings, overall });
   } catch {
     return NextResponse.json({ rankings: [] });
   }
