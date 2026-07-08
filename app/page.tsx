@@ -74,6 +74,7 @@ export default function MainPage() {
   }
 
   const currentRanking = rankings[gradeTab];
+  const [overallTab, setOverallTab] = useState<"volume" | "score">("volume");
   const inputCls = "w-full border-2 border-gray-200 focus:border-[#F6E27F] rounded-2xl px-4 py-3 text-base outline-none transition-all bg-gray-50 focus:bg-white";
   const labelCls = "text-xs font-extrabold text-[#1F2A44]/60 mb-1 block uppercase tracking-wide";
   const BAR_COLORS = ["#F6E27F", "#B8D4F0", "#76C043"];
@@ -103,210 +104,151 @@ export default function MainPage() {
           {/* 왼쪽: 순위판 */}
           <div className="main-rank-col rounded-3xl p-6 bg-white" style={{ border: "1.5px solid #F0E8C8", boxShadow: "0 2px 12px rgba(246,226,127,0.2)" }}>
 
-            {/* 종합 순위 */}
-            {overall && (
-              <div className="mb-6 rounded-2xl p-4" style={{ background: "linear-gradient(135deg, #1F2A44 0%, #2D3F66 100%)", border: "2px solid #F6E27F" }}>
-                <div className="flex items-center gap-2 mb-1">
-                  <span style={{ fontSize: "18px" }}>🏆</span>
-                  <p className="font-black text-sm" style={{ color: "#F6E27F" }}>종합 순위</p>
-                </div>
-                <p className="text-[10px] font-bold mb-4" style={{ color: "rgba(246,226,127,0.7)" }}>챌린지 시상은 종합순위로 해요!</p>
-                <div className="grid grid-cols-2 gap-4">
-                  {/* 학습량 */}
-                  <div>
-                    <p className="text-[10px] font-black mb-2 uppercase tracking-wide" style={{ color: "#76C043" }}>⚡ 학습량 TOP 3</p>
-                    {overall.volumeTop3.length === 0 ? (
-                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>아직 기록이 없어요!</p>
-                    ) : (() => {
-                      const max = overall.volumeTop3[0]?.sessions ?? 1;
-                      return (
-                        <div className="space-y-2">
-                          {overall.volumeTop3.map((entry: any, i: number) => {
-                            const pct = Math.round((entry.sessions / max) * 100);
-                            return (
-                              <div key={entry.student?.id}>
-                                <div className="flex items-center gap-1.5 mb-0.5">
-                                  <span className="text-sm">{RANK_MEDALS[i]}</span>
-                                  <span className="text-sm">{entry.student?.avatar}</span>
-                                  <span className="font-bold text-xs flex-1 truncate" style={{ color: "white" }}>{entry.student?.name}</span>
-                                  <span className="text-xs font-black" style={{ color: "#F6E27F" }}>{entry.sessions}회</span>
-                                </div>
-                                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
-                                  <div className="h-full rounded-full" style={{ width: `${pct}%`, background: BAR_COLORS[i] }} />
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
+            {/* 종합 순위 — 포디움 */}
+            {overall && (() => {
+              const list = overallTab === "volume" ? overall.volumeTop3 : overall.scoreTop3;
+              const getValue = (e: any) => overallTab === "volume" ? `${e.sessions}회` : `${e.avgAccuracy}점`;
+              // 포디움 순서: 2등(왼쪽) 1등(가운데) 3등(오른쪽)
+              const podium = [list[1], list[0], list[2]];
+              const podiumHeights = ["36px", "52px", "24px"];
+              const podiumColors = ["rgba(255,255,255,0.15)", "#F6E27F", "rgba(255,255,255,0.08)"];
+              const podiumTextColors = ["white", "#1F2A44", "rgba(255,255,255,0.6)"];
+              return (
+                <div className="mb-6 rounded-2xl" style={{ background: "#1F2A44", border: "2px solid #F6E27F", overflow: "hidden" }}>
+                  <div style={{ padding: "14px 16px 10px" }}>
+                    <p className="font-black text-sm" style={{ color: "#F6E27F" }}>🏆 종합 순위</p>
+                    <p style={{ fontSize: "10px", color: "rgba(246,226,127,0.6)", marginTop: "2px" }}>챌린지 시상은 종합순위로 해요!</p>
                   </div>
-                  {/* 성적 */}
-                  <div>
-                    <p className="text-[10px] font-black mb-2 uppercase tracking-wide" style={{ color: "#76C043" }}>⭐ 성적 TOP 3</p>
-                    {overall.scoreTop3.length === 0 ? (
-                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>아직 기록이 없어요!</p>
-                    ) : (() => {
-                      const max = overall.scoreTop3[0]?.avgAccuracy ?? 1;
-                      return (
-                        <div className="space-y-2">
-                          {overall.scoreTop3.map((entry: any, i: number) => {
-                            const pct = Math.round((entry.avgAccuracy / max) * 100);
-                            return (
-                              <div key={entry.student?.id}>
-                                <div className="flex items-center gap-1.5 mb-0.5">
-                                  <span className="text-sm">{RANK_MEDALS[i]}</span>
-                                  <span className="text-sm">{entry.student?.avatar}</span>
-                                  <span className="font-bold text-xs flex-1 truncate" style={{ color: "white" }}>{entry.student?.name}</span>
-                                  <span className="text-xs font-black" style={{ color: "#76C043" }}>{entry.avgAccuracy}점</span>
-                                </div>
-                                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.1)" }}>
-                                  <div className="h-full rounded-full" style={{ width: `${pct}%`, background: BAR_COLORS[i] }} />
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
+
+                  {/* 탭 */}
+                  <div style={{ display: "flex", gap: "6px", padding: "0 16px 12px" }}>
+                    {(["volume", "score"] as const).map(t => (
+                      <button key={t} onClick={() => setOverallTab(t)}
+                        style={{ flex: 1, padding: "5px 0", borderRadius: "8px", fontSize: "11px", fontWeight: 800, cursor: "pointer", border: "none",
+                          background: overallTab === t ? "rgba(246,226,127,0.2)" : "rgba(255,255,255,0.05)",
+                          color: overallTab === t ? "#F6E27F" : "rgba(255,255,255,0.35)" }}>
+                        {t === "volume" ? "⚡ 학습량" : "⭐ 성적"}
+                      </button>
+                    ))}
                   </div>
-                </div>
-                {/* 내 종합 순위 (로그인 시) */}
-                {myName && (overall.myVolume || overall.myScore) && (
-                  <div className="mt-4 rounded-xl p-3" style={{ background: "rgba(246,226,127,0.12)", border: "1px solid rgba(246,226,127,0.3)" }}>
-                    <p className="text-[10px] font-black mb-2" style={{ color: "#F6E27F" }}>🙋 {myName}의 종합 순위</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {overall.myVolume && (
-                        <div>
-                          <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.5)" }}>⚡ 학습량</p>
-                          <p className="font-black text-sm" style={{ color: "white" }}>{overall.myVolume.rank}위 <span style={{ color: "#F6E27F" }}>{overall.myVolume.sessions}회</span></p>
+
+                  {/* 포디움 */}
+                  {list.length === 0 ? (
+                    <p style={{ textAlign: "center", padding: "20px", fontSize: "12px", color: "rgba(255,255,255,0.3)" }}>아직 기록이 없어요!</p>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: "8px", padding: "0 16px" }}>
+                      {podium.map((entry, pi) => entry ? (
+                        <div key={entry.student?.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", flex: 1 }}>
+                          <span style={{ fontSize: "22px" }}>{entry.student?.avatar}</span>
+                          <span style={{ fontSize: "11px", fontWeight: 800, color: "white", textAlign: "center" }}>{entry.student?.name}</span>
+                          <span style={{ fontSize: "10px", fontWeight: 800, color: "#F6E27F" }}>{getValue(entry)}</span>
+                          <div style={{ width: "100%", height: podiumHeights[pi], background: podiumColors[pi], borderRadius: "8px 8px 0 0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: pi === 1 ? "18px" : "14px", color: podiumTextColors[pi], fontWeight: 900 }}>
+                            {RANK_MEDALS[pi === 0 ? 1 : pi === 1 ? 0 : 2]}
+                          </div>
                         </div>
-                      )}
-                      {overall.myScore && (
-                        <div>
-                          <p className="text-[9px]" style={{ color: "rgba(255,255,255,0.5)" }}>⭐ 성적</p>
-                          <p className="font-black text-sm" style={{ color: "white" }}>{overall.myScore.rank}위 <span style={{ color: "#76C043" }}>{overall.myScore.avgAccuracy}점</span></p>
-                        </div>
-                      )}
+                      ) : <div key={pi} style={{ flex: 1 }} />)}
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
 
-            <h2 className="font-black text-sm mb-4" style={{ color: "#1F2A44" }}>🏆 학년별 순위</h2>
+                  {/* 내 종합 순위 */}
+                  {myName && (overall.myVolume || overall.myScore) && (
+                    <div style={{ margin: "10px 16px 14px", borderRadius: "10px", padding: "10px 12px", background: "rgba(246,226,127,0.1)", border: "1px solid rgba(246,226,127,0.25)" }}>
+                      <p style={{ fontSize: "10px", fontWeight: 900, color: "#F6E27F", marginBottom: "6px" }}>🙋 {myName}의 종합 순위</p>
+                      <div style={{ display: "flex", gap: "12px" }}>
+                        {overall.myVolume && <div><p style={{ fontSize: "9px", color: "rgba(255,255,255,0.4)" }}>⚡ 학습량</p><p style={{ fontSize: "13px", fontWeight: 900, color: "white" }}>{overall.myVolume.rank}위 <span style={{ color: "#F6E27F" }}>{overall.myVolume.sessions}회</span></p></div>}
+                        {overall.myScore && <div><p style={{ fontSize: "9px", color: "rgba(255,255,255,0.4)" }}>⭐ 성적</p><p style={{ fontSize: "13px", fontWeight: 900, color: "white" }}>{overall.myScore.rank}위 <span style={{ color: "#76C043" }}>{overall.myScore.avgAccuracy}점</span></p></div>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
-            {/* 학년 탭 */}
-            <div className="grid gap-2 mb-5" style={{ gridTemplateColumns: `repeat(${Math.max(rankings.length, 1)}, 1fr)` }}>
+            <p className="font-black text-sm mb-3" style={{ color: "#1F2A44" }}>📚 학년별 순위</p>
+
+            {/* 학년 탭 — 가로 스크롤 칩 */}
+            <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "10px", scrollbarWidth: "none", marginBottom: "4px" }}>
               {rankings.map((r, i) => (
                 <button key={r.wordSetId} onClick={() => setGradeTab(i)}
-                  className="rounded-xl font-extrabold transition-all"
-                  style={{ position: "relative", height: "60px", overflow: "hidden",
-                    ...(gradeTab === i
-                      ? { background: "#1F2A44" }
-                      : { background: "#ECEADE" }) }}>
-                  <img src="/TheFluent/logo.symbol.clear.png" alt=""
-                    style={{ position: "absolute", width: "52px", height: "52px", objectFit: "contain",
-                      bottom: "-6px", right: "-6px", opacity: gradeTab === i ? 0.55 : 0.3 }} />
-                  <div style={{ position: "relative", zIndex: 1, lineHeight: 1 }}>
-                    <div style={{ fontSize: "20px", fontWeight: 900, color: gradeTab === i ? "#F6E27F" : "#888888" }}>{r.name.replace("학년", "")}</div>
-                    <div style={{ fontSize: "9px", fontWeight: 800, marginTop: "2px", color: gradeTab === i ? "rgba(246,226,127,0.7)" : "#AAAAAA" }}>학년</div>
-                  </div>
+                  style={{ flexShrink: 0, padding: "5px 14px", borderRadius: "20px", fontSize: "12px", fontWeight: 800, cursor: "pointer", border: "none", transition: "all 0.15s",
+                    background: gradeTab === i ? "#1F2A44" : "#F0EAD8",
+                    color: gradeTab === i ? "#F6E27F" : "#8A8A8A" }}>
+                  {r.name.replace("학년", "")}
                 </button>
               ))}
             </div>
 
             {currentRanking && (
               <div>
-                {/* 학습량 + 성적 나란히 */}
-                <div className="grid grid-cols-2 gap-6">
-
-                  {/* 학습량 */}
-                  <div>
-                    <p className="text-[10px] font-black mb-3 uppercase tracking-wide" style={{ color: "#76C043" }}>⚡ 학습량 TOP 3</p>
-                    {currentRanking.volumeTop3.length === 0 ? (
-                      <p className="text-xs py-2" style={{ color: "#CCCCCC" }}>아직 기록이 없어요!</p>
-                    ) : (() => {
+                {/* 학습량 */}
+                <p style={{ fontSize: "10px", fontWeight: 900, color: "#76C043", marginBottom: "8px", marginTop: "4px" }}>⚡ 학습량 TOP 3</p>
+                {currentRanking.volumeTop3.length === 0 ? (
+                  <p style={{ fontSize: "12px", color: "#CCCCCC", marginBottom: "12px" }}>아직 기록이 없어요!</p>
+                ) : (
+                  <div style={{ marginBottom: "14px" }}>
+                    {currentRanking.volumeTop3.map((entry, i) => {
                       const max = currentRanking.volumeTop3[0]?.sessions ?? 1;
+                      const pct = Math.round((entry.sessions / max) * 100);
                       return (
-                        <div className="space-y-3">
-                          {currentRanking.volumeTop3.map((entry, i) => {
-                            const pct = Math.round((entry.sessions / max) * 100);
-                            const gap = i > 0 ? currentRanking.volumeTop3[0].sessions - entry.sessions : 0;
-                            return (
-                              <div key={entry.student?.id}>
-                                <div className="flex items-center gap-1.5 mb-1">
-                                  <span className="text-sm">{RANK_MEDALS[i]}</span>
-                                  <span className="text-base">{entry.student?.avatar}</span>
-                                  <span className="font-bold text-sm flex-1 truncate" style={{ color: "#1F2A44" }}>{entry.student?.name}</span>
-                                  <span className="text-xs font-black" style={{ color: "#1F2A44" }}>{entry.sessions}회</span>
-                                </div>
-                                <div className="h-2 rounded-full overflow-hidden" style={{ background: "#F0ECE0" }}>
-                                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: BAR_COLORS[i] }} />
-                                </div>
-                                {i > 0 && <p className="text-[10px] mt-0.5" style={{ color: "#AAAAAA" }}>▲ 1위와 {gap}회 차이</p>}
-                              </div>
-                            );
-                          })}
+                        <div key={entry.student?.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 0", borderBottom: "1px solid #F0E8C8" }}>
+                          <span style={{ fontSize: "16px", width: "20px", textAlign: "center" }}>{RANK_MEDALS[i]}</span>
+                          <span style={{ fontSize: "18px" }}>{entry.student?.avatar}</span>
+                          <span style={{ flex: 1, fontWeight: 800, fontSize: "13px", color: "#1F2A44" }}>{entry.student?.name}</span>
+                          <div style={{ width: "70px", background: "#F0ECE0", borderRadius: "4px", height: "5px", overflow: "hidden" }}>
+                            <div style={{ width: `${pct}%`, height: "100%", background: BAR_COLORS[i], borderRadius: "4px" }} />
+                          </div>
+                          <span style={{ fontSize: "11px", fontWeight: 900, color: "#1F2A44", width: "28px", textAlign: "right" }}>{entry.sessions}회</span>
                         </div>
                       );
-                    })()}
+                    })}
                   </div>
+                )}
 
-                  {/* 성적 */}
+                {/* 성적 */}
+                <p style={{ fontSize: "10px", fontWeight: 900, color: "#76C043", marginBottom: "8px" }}>⭐ 성적 TOP 3</p>
+                {currentRanking.scoreTop3.length === 0 ? (
+                  <p style={{ fontSize: "12px", color: "#CCCCCC" }}>아직 기록이 없어요!</p>
+                ) : (
                   <div>
-                    <p className="text-[10px] font-black mb-3 uppercase tracking-wide" style={{ color: "#76C043" }}>⭐ 성적 TOP 3</p>
-                    {currentRanking.scoreTop3.length === 0 ? (
-                      <p className="text-xs py-2" style={{ color: "#CCCCCC" }}>아직 기록이 없어요!</p>
-                    ) : (() => {
+                    {currentRanking.scoreTop3.map((entry, i) => {
                       const max = currentRanking.scoreTop3[0]?.avgAccuracy ?? 1;
+                      const pct = Math.round((entry.avgAccuracy / max) * 100);
                       return (
-                        <div className="space-y-3">
-                          {currentRanking.scoreTop3.map((entry, i) => {
-                            const pct = Math.round((entry.avgAccuracy / max) * 100);
-                            const gap = i > 0 ? currentRanking.scoreTop3[0].avgAccuracy - entry.avgAccuracy : 0;
-                            return (
-                              <div key={entry.student?.id}>
-                                <div className="flex items-center gap-1.5 mb-1">
-                                  <span className="text-sm">{RANK_MEDALS[i]}</span>
-                                  <span className="text-base">{entry.student?.avatar}</span>
-                                  <span className="font-bold text-sm flex-1 truncate" style={{ color: "#1F2A44" }}>{entry.student?.name}</span>
-                                  <span className="text-xs font-black" style={{ color: "#1F2A44" }}>{entry.avgAccuracy}점</span>
-                                </div>
-                                <div className="h-2 rounded-full overflow-hidden" style={{ background: "#F0ECE0" }}>
-                                  <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: BAR_COLORS[i] }} />
-                                </div>
-                                {i > 0 && <p className="text-[10px] mt-0.5" style={{ color: "#AAAAAA" }}>▲ 1위와 {gap}점 차이</p>}
-                              </div>
-                            );
-                          })}
+                        <div key={entry.student?.id} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 0", borderBottom: "1px solid #F0E8C8" }}>
+                          <span style={{ fontSize: "16px", width: "20px", textAlign: "center" }}>{RANK_MEDALS[i]}</span>
+                          <span style={{ fontSize: "18px" }}>{entry.student?.avatar}</span>
+                          <span style={{ flex: 1, fontWeight: 800, fontSize: "13px", color: "#1F2A44" }}>{entry.student?.name}</span>
+                          <div style={{ width: "70px", background: "#F0ECE0", borderRadius: "4px", height: "5px", overflow: "hidden" }}>
+                            <div style={{ width: `${pct}%`, height: "100%", background: BAR_COLORS[i], borderRadius: "4px" }} />
+                          </div>
+                          <span style={{ fontSize: "11px", fontWeight: 900, color: "#1F2A44", width: "28px", textAlign: "right" }}>{entry.avgAccuracy}점</span>
                         </div>
                       );
-                    })()}
+                    })}
                   </div>
-                </div>
+                )}
 
-                {/* 내 순위 */}
+                {/* 내 학년 순위 */}
                 {myName && (currentRanking.myVolume || currentRanking.myScore) && (
-                  <div className="mt-5 rounded-2xl p-4" style={{ background: "#FFFBEE", border: "1px solid #F0E8C8" }}>
-                    <p className="text-[11px] font-black mb-3" style={{ color: "#1F2A44" }}>🙋 {myName}의 순위</p>
-                    <div className="grid grid-cols-2 gap-3">
+                  <div style={{ marginTop: "14px", borderRadius: "12px", padding: "12px", background: "#FFFBEE", border: "1px solid #F0E8C8" }}>
+                    <p style={{ fontSize: "11px", fontWeight: 900, color: "#1F2A44", marginBottom: "8px" }}>🙋 {myName}의 순위</p>
+                    <div style={{ display: "flex", gap: "12px" }}>
                       {currentRanking.myVolume && (
-                        <div className="rounded-xl px-3 py-2.5 bg-white" style={{ border: "1px solid #F0E8C8" }}>
-                          <p className="text-[10px] mb-0.5" style={{ color: "#AAAAAA" }}>⚡ 학습량</p>
-                          <p className="font-black text-sm" style={{ color: "#1F2A44" }}>{currentRanking.myVolume.rank}위 <span style={{ color: "#C8A800" }}>{currentRanking.myVolume.sessions}회</span></p>
+                        <div style={{ flex: 1, background: "white", borderRadius: "10px", padding: "8px 10px", border: "1px solid #F0E8C8" }}>
+                          <p style={{ fontSize: "10px", color: "#AAAAAA", marginBottom: "2px" }}>⚡ 학습량</p>
+                          <p style={{ fontSize: "13px", fontWeight: 900, color: "#1F2A44" }}>{currentRanking.myVolume.rank}위 <span style={{ color: "#C8A800" }}>{currentRanking.myVolume.sessions}회</span></p>
                           {currentRanking.myVolume.rank > 1
-                            ? <p className="text-[10px] mt-0.5" style={{ color: "#AAAAAA" }}>윗 순위까지 <span style={{ color: "#C8A800", fontWeight: 800 }}>{currentRanking.myVolume.gapToAbove}회</span> 차이</p>
-                            : <p className="text-[10px] mt-0.5 font-black" style={{ color: "#C8A800" }}>🏆 1위!</p>}
+                            ? <p style={{ fontSize: "10px", color: "#AAAAAA", marginTop: "2px" }}>{currentRanking.myVolume.gapToAbove}회 차이</p>
+                            : <p style={{ fontSize: "10px", color: "#C8A800", fontWeight: 800, marginTop: "2px" }}>🏆 1위!</p>}
                         </div>
                       )}
                       {currentRanking.myScore && (
-                        <div className="rounded-xl px-3 py-2.5 bg-white" style={{ border: "1px solid #D6EEC4" }}>
-                          <p className="text-[10px] mb-0.5" style={{ color: "#AAAAAA" }}>⭐ 성적</p>
-                          <p className="font-black text-sm" style={{ color: "#1F2A44" }}>{currentRanking.myScore.rank}위 <span style={{ color: "#4A9A1A" }}>{currentRanking.myScore.avgAccuracy}점</span></p>
+                        <div style={{ flex: 1, background: "white", borderRadius: "10px", padding: "8px 10px", border: "1px solid #D6EEC4" }}>
+                          <p style={{ fontSize: "10px", color: "#AAAAAA", marginBottom: "2px" }}>⭐ 성적</p>
+                          <p style={{ fontSize: "13px", fontWeight: 900, color: "#1F2A44" }}>{currentRanking.myScore.rank}위 <span style={{ color: "#4A9A1A" }}>{currentRanking.myScore.avgAccuracy}점</span></p>
                           {currentRanking.myScore.rank > 1
-                            ? <p className="text-[10px] mt-0.5" style={{ color: "#AAAAAA" }}>윗 순위까지 <span style={{ color: "#4A9A1A", fontWeight: 800 }}>{currentRanking.myScore.gapToAbove}점</span> 차이</p>
-                            : <p className="text-[10px] mt-0.5 font-black" style={{ color: "#4A9A1A" }}>🏆 1위!</p>}
+                            ? <p style={{ fontSize: "10px", color: "#AAAAAA", marginTop: "2px" }}>{currentRanking.myScore.gapToAbove}점 차이</p>
+                            : <p style={{ fontSize: "10px", color: "#4A9A1A", fontWeight: 800, marginTop: "2px" }}>🏆 1위!</p>}
                         </div>
                       )}
                     </div>
