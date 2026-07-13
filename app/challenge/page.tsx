@@ -300,7 +300,7 @@ function ChallengePageInner() {
         if (firstWord) setTimeout(() => speak(firstWord.english), 300);
       } else if (screen === "quiz-typing") {
         setScreen("batch-result");
-        saveBatchScore();
+        saveBatchScore(lastCorrect);
       }
     }
   }
@@ -336,13 +336,13 @@ function ChallengePageInner() {
     }, 600);
   }
 
-  async function saveBatchScore() {
+  async function saveBatchScore(lastCorrect = false) {
     try {
       await fetch("/api/challenge/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          score: totalScore,
+          score: totalScore + (lastCorrect ? 1 : 0),
           totalQuestions: totalQuestions + 1,
           mode: "FULL",
           wordSetId: selectedSet?.id,
