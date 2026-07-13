@@ -94,6 +94,7 @@ function ChallengePageInner() {
   const [copyTyped, setCopyTyped]     = useState("");
   const [copyOk, setCopyOk]           = useState<boolean | null>(null);
   const [myName, setMyName]           = useState<string | null>(null);
+  const serverWordSetIdRef = useRef<number | null>(null);
   const [rankings, setRankings]       = useState<any[]>([]);
   const [initializing, setInitializing] = useState(true);
   const [reviewWords, setReviewWords]   = useState<Word[]>([]);
@@ -112,6 +113,7 @@ function ChallengePageInner() {
         r.json().then(d => {
           if (d?.name) setMyName(d.name);
           if (d?.currentWordSetId) {
+            serverWordSetIdRef.current = d.currentWordSetId;
             if (typeof window !== "undefined" && !localStorage.getItem("wc_placed_id")) {
               localStorage.setItem("wc_placed_id", String(d.currentWordSetId));
             }
@@ -134,7 +136,15 @@ function ChallengePageInner() {
         return;
       }
       const placedId    = typeof window !== "undefined" ? Number(localStorage.getItem("wc_placed_id") || 0) : 0;
-      const unlockedIdx = typeof window !== "undefined" ? Number(localStorage.getItem("wc_unlocked_idx") ?? -1) : -1;
+      let unlockedIdx   = typeof window !== "undefined" ? Number(localStorage.getItem("wc_unlocked_idx") ?? -1) : -1;
+      // localStorage에 unlocked 위치가 없으면 서버의 currentWordSetId로 복원
+      if (placedId && unlockedIdx < 0 && serverWordSetIdRef.current) {
+        const serverIdx = sets.findIndex(ws => ws.id === serverWordSetIdRef.current);
+        if (serverIdx >= 0) {
+          unlockedIdx = serverIdx;
+          localStorage.setItem("wc_unlocked_idx", String(serverIdx));
+        }
+      }
       if (placedId && unlockedIdx >= 0 && unlockedIdx < sets.length) {
         const target = sets[unlockedIdx];
         if (target) { setTimeout(() => selectSet(target), 100); return; }
@@ -354,6 +364,11 @@ function ChallengePageInner() {
           const nextIdx = curIdx + 1;
           if (nextIdx < wordSets.length) {
             localStorage.setItem("wc_unlocked_idx", String(nextIdx));
+            fetch("/api/auth/me", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ currentWordSetId: wordSets[nextIdx].id }),
+            }).catch(() => {});
           } else {
             localStorage.removeItem("wc_placed_id");
             localStorage.removeItem("wc_unlocked_idx");

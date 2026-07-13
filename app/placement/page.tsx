@@ -156,8 +156,10 @@ export default function PlacementPage() {
       localStorage.setItem("wc_placed_id", String(wsId));
       localStorage.setItem("wc_unlocked_idx", String(idx));
     }
-    fetch("/api/auth/me").then(r => r.json()).then(me => {
-      if (me?.id) fetch(`/api/students/${me.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currentWordSetId: wsId }) }).catch(() => {});
+    fetch("/api/auth/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentWordSetId: wsId }),
     }).catch(() => {});
     router.replace(`/challenge?startSet=${wsId}`);
   }
